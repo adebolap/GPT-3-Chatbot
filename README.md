@@ -1,50 +1,34 @@
-# PromptRefiner MVP
+# PromptRefiner
 
-PromptRefiner is a lightweight browser extension that refines rough prompts before sending them to ChatGPT, Claude, Gemini, or other LLM web apps.
+A lightweight browser extension that refines rough prompts before sending them to ChatGPT, Claude, Gemini, or any LLM web app.
 
 ## Monorepo structure
 
-- `apps/extension`: Plasmo extension (MV3, React + TypeScript)
-- `apps/api`: Express API for refinement, checkout, usage
-- `apps/web`: minimal web shell for auth/billing UI
-- `packages/shared`: shared TypeScript types
+```
+apps/
+  extension/   Plasmo MV3 extension (React + TypeScript)
+  api/         Express backend (Node.js, TypeScript)
+  web/         Next.js 14 marketing + auth + billing site
+packages/
+  shared/      Shared TypeScript types
+```
 
-## MVP features implemented
+## MVP features
 
-- Site adapters for ChatGPT, Claude, Gemini, plus generic fallback.
-- Floating **Refine** button injected near detected prompt input.
-- Modal with **Original** and **Refined** text plus **Replace prompt**, **Copy refined prompt**, and **Cancel**.
-- `/api/refine` endpoint with prompt-only rewrite behavior and JSON response shape.
-- Refinement modes scaffolded and passed to backend.
-- Free-tier usage guard (10 refinements/month-like counter scaffold per user id header).
-- Stripe Checkout endpoint (`/api/checkout`) for annual subscription in test mode.
-- Stripe webhook endpoint scaffold (`/api/stripe-webhook`) for subscription updates.
-- Secret masking before model call.
-- No hardcoded API keys (all from env).
-
-## Environment variables
-
-Create `.env` files (never commit):
-
-### `apps/api/.env`
-
-- `OPENAI_API_KEY`
-- `REFINER_MODEL` (optional, default `gpt-4.1-mini`)
-- `STRIPE_SECRET_KEY`
-- `STRIPE_PRICE_ID`
-- `APP_URL` (e.g. `http://localhost:3000`)
-- `STRIPE_WEBHOOK_SECRET` (for future signature verification)
-
-### `apps/extension/.env`
-
-- `PLASMO_PUBLIC_API_BASE_URL` (e.g. `http://localhost:8787`)
-
-### `apps/web/.env.local`
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Site adapters** for ChatGPT, Claude, Gemini + generic fallback.
+- **Floating "✦ Refine" button** injected near the detected prompt input.
+- **7 refinement modes**: Default · Professional · Accuracy-first · Technical/Coding · Marketing · Shorter · Deep Research.
+- **Modal** with Original / Refined side-by-side view, plus **Replace**, **Copy**, and **Cancel** actions.
+- **Mode picker** in the modal and as a default-mode setting in the extension popup.
+- **Free tier**: 10 refinements/month (tracked per device ID for anonymous users, per Supabase user for signed-in users).
+- **Pro tier** (€29/year early-bird): unlimited refinements, saved styles, custom default mode — via Stripe Checkout.
+- **Stripe webhook** that updates `subscription_status` in Supabase on payment events.
+- **Secret masking** before any model call (API keys, passwords, tokens, card numbers).
+- **No hardcoded secrets** — all from `.env` files.
 
 ## Supabase schema
+
+Run in your Supabase SQL editor:
 
 ```sql
 create table users (
@@ -75,27 +59,122 @@ create table prompt_preferences (
 );
 ```
 
-## Local run
+## Environment variables
 
-1. Install deps:
-   - `npm install`
-2. Run API:
-   - `npm run dev -w @promptrefiner/api`
-3. Run extension:
-   - `npm run dev -w @promptrefiner/extension`
-4. Load the unpacked extension from the generated Plasmo build folder in Chromium.
+> Never commit `.env` files — they are git-ignored.
+
+### `apps/api/.env`
+
+```env
+OPENAI_API_KEY=sk-...
+REFINER_MODEL=gpt-4.1-mini          # optional, default gpt-4.1-mini
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PRICE_ID=price_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+APP_URL=http://localhost:3000
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...    # service role key (keep secret)
+PORT=8787                            # optional, default 8787
+```
+
+### `apps/extension/.env`
+
+```env
+PLASMO_PUBLIC_API_BASE_URL=http://localhost:8787
+PLASMO_PUBLIC_WEB_URL=http://localhost:3000
+PLASMO_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+PLASMO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
+
+### `apps/web/.env.local`
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+NEXT_PUBLIC_API_URL=http://localhost:8787
+```
+
+## Local development
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Run the API
+
+```bash
+# Create apps/api/.env first
+npm run dev -w @promptrefiner/api
+# API listens on http://localhost:8787
+```
+
+### 3. Run the extension
+
+```bash
+# Create apps/extension/.env first
+npm run dev -w @promptrefiner/extension
+# Plasmo outputs to apps/extension/.plasmo/chrome-mv3-dev/
+```
+
+### 4. Load the extension in Chrome
+
+1. Open `chrome://extensions`
+2. Enable **Developer mode** (top right)
+3. Click **Load unpacked**
+4. Select `apps/extension/.plasmo/chrome-mv3-dev/`
+
+### 5. Run the web app (optional)
+
+```bash
+# Create apps/web/.env.local first
+npm run dev -w @promptrefiner/web
+# App runs at http://localhost:3000
+```
+
+## Stripe local testing
+
+```bash
+# Install Stripe CLI: https://stripe.com/docs/stripe-cli
+stripe login
+stripe listen --forward-to http://localhost:8787/api/stripe-webhook
+# Copy the webhook signing secret into STRIPE_WEBHOOK_SECRET
+```
+
+## API endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/refine` | optional JWT | Refine a prompt |
+| POST | `/api/checkout` | optional JWT | Create Stripe Checkout session |
+| POST | `/api/stripe-webhook` | Stripe signature | Handle subscription events |
+| GET | `/api/me` | optional JWT | Current user profile |
+| GET | `/api/usage` | optional JWT | Monthly refinement count |
+
+## Refinement response shape
+
+```json
+{
+  "refinedPrompt": "...",
+  "detectedIntent": "coding | research | writing | analysis | general",
+  "missingContext": ["..."],
+  "confidence": "high | medium | low"
+}
+```
 
 ## Security notes
 
-- Raw prompts are not persisted by default.
-- Add optional setting (`allow_prompt_history`) before storing history.
-- `/api/refine` masks obvious API keys, passwords, tokens, and card-like numbers.
-- Add a production-grade distributed rate limiter (Redis/Upstash) before launch.
+- Raw prompts are **not persisted** by default.
+- Secrets (API keys, passwords, tokens, card-like numbers) are masked before model calls.
+- Use a production-grade distributed rate limiter (Redis / Upstash) before public launch.
+- Add Supabase Row Level Security (RLS) policies to `usage_events` and `prompt_preferences`.
+- Verify `stripe-signature` header on every webhook — already implemented.
 
-## Next steps
+## Roadmap / next steps
 
-- Add proper Supabase JWT auth middleware for `/api/*`.
-- Persist usage counters by month in `usage_events` table.
-- Verify Stripe webhook signatures and update `users.subscription_status`.
-- Add mode picker UI in extension modal.
-- Add saved prompt styles and custom default mode controls.
+- Add mode picker persistence via `prompt_preferences` table.
+- Add saved prompt styles for Pro users.
+- Add RLS policies to Supabase tables.
+- Ship to Chrome Web Store.
+- Add Firefox / Edge support (Plasmo MV2 target).
