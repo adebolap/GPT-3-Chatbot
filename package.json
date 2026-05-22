@@ -1,0 +1,9 @@
+{
+  "name": "promptrefiner-monorepo",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "echo 'Configure per-app build commands'",
+    "lint": "echo 'Add lint config'"
+  }
+}
