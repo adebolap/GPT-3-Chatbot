@@ -8,8 +8,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 )
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787"
-
 export default function BillingPage() {
   const [loading, setLoading] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -20,7 +18,7 @@ export default function BillingPage() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setChecking(false); return }
       setUserEmail(session.user.email ?? null)
-      const res = await fetch(`${API}/api/me`, {
+      const res = await fetch("/api/me", {
         headers: { Authorization: `Bearer ${session.access_token}` },
       }).catch(() => null)
       if (res?.ok) {
@@ -37,7 +35,7 @@ export default function BillingPage() {
     const headers: Record<string, string> = { "Content-Type": "application/json" }
     if (session) headers["Authorization"] = `Bearer ${session.access_token}`
 
-    const res = await fetch(`${API}/api/checkout`, {
+    const res = await fetch("/api/checkout", {
       method: "POST",
       headers,
     }).catch(() => null)

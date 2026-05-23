@@ -48,6 +48,14 @@ create table usage_events (
   created_at timestamptz default now()
 );
 
+-- Anonymous (device-based) usage — no FK to users
+create table device_usage (
+  device_id text not null,
+  month text not null,
+  refinement_count int not null default 0,
+  primary key (device_id, month)
+);
+
 create table prompt_preferences (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references users(id),
@@ -63,35 +71,47 @@ create table prompt_preferences (
 
 > Never commit `.env` files — they are git-ignored.
 
-### `apps/api/.env`
+### `apps/web/.env.local` (web app + API routes)
 
 ```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...    # service role — never expose client-side
+
+# OpenAI
 OPENAI_API_KEY=sk-...
-REFINER_MODEL=gpt-4.1-mini          # optional, default gpt-4.1-mini
+REFINER_MODEL=gpt-4.1-mini          # optional
+
+# Stripe
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PRICE_ID=price_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+
+# App URL (set to your Vercel domain in production)
 APP_URL=http://localhost:3000
-SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...    # service role key (keep secret)
-PORT=8787                            # optional, default 8787
 ```
 
 ### `apps/extension/.env`
 
 ```env
-PLASMO_PUBLIC_API_BASE_URL=http://localhost:8787
+PLASMO_PUBLIC_API_BASE_URL=http://localhost:3000   # points to Next.js app
 PLASMO_PUBLIC_WEB_URL=http://localhost:3000
 PLASMO_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 PLASMO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ```
 
-### `apps/web/.env.local`
+### `apps/api/.env` (only needed if running the standalone Express server)
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-NEXT_PUBLIC_API_URL=http://localhost:8787
+OPENAI_API_KEY=sk-...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PRICE_ID=price_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+APP_URL=http://localhost:3000
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
 ## Local development
@@ -102,18 +122,18 @@ NEXT_PUBLIC_API_URL=http://localhost:8787
 npm install
 ```
 
-### 2. Run the API
+### 2. Run the web app (web UI + all API routes)
 
 ```bash
-# Create apps/api/.env first
-npm run dev -w @promptrefiner/api
-# API listens on http://localhost:8787
+# Create apps/web/.env.local first
+npm run dev -w @promptrefiner/web
+# App + API runs at http://localhost:3000
 ```
 
 ### 3. Run the extension
 
 ```bash
-# Create apps/extension/.env first
+# Create apps/extension/.env first (PLASMO_PUBLIC_API_BASE_URL=http://localhost:3000)
 npm run dev -w @promptrefiner/extension
 # Plasmo outputs to apps/extension/.plasmo/chrome-mv3-dev/
 ```
@@ -125,22 +145,49 @@ npm run dev -w @promptrefiner/extension
 3. Click **Load unpacked**
 4. Select `apps/extension/.plasmo/chrome-mv3-dev/`
 
-### 5. Run the web app (optional)
-
-```bash
-# Create apps/web/.env.local first
-npm run dev -w @promptrefiner/web
-# App runs at http://localhost:3000
-```
-
 ## Stripe local testing
 
 ```bash
 # Install Stripe CLI: https://stripe.com/docs/stripe-cli
 stripe login
-stripe listen --forward-to http://localhost:8787/api/stripe-webhook
-# Copy the webhook signing secret into STRIPE_WEBHOOK_SECRET
+stripe listen --forward-to http://localhost:3000/api/stripe-webhook
+# Copy the webhook signing secret into STRIPE_WEBHOOK_SECRET in apps/web/.env.local
 ```
+
+## Deploy to Vercel
+
+The `apps/web` Next.js app hosts both the marketing site and all API routes — one Vercel project.
+
+### 1. Import the repo
+
+Go to vercel.com → **Add New Project** → import `adebolap/GPT-3-Chatbot`.
+
+### 2. Set the root directory
+
+In **Build & Output Settings**, set **Root Directory** to `apps/web`.
+
+### 3. Add environment variables
+
+In **Settings → Environment Variables**, add every key from `apps/web/.env.local` (without the `NEXT_PUBLIC_` variables being secret — those are safe to expose).
+
+Set `APP_URL` to your final Vercel domain (e.g. `https://promptrefiner.vercel.app`).
+
+### 4. Deploy
+
+Vercel auto-deploys on every push to `main`. API routes are available at `https://yourapp.vercel.app/api/*`.
+
+### 5. Update Stripe webhook endpoint
+
+In the Stripe Dashboard → **Webhooks**, point the endpoint to `https://yourapp.vercel.app/api/stripe-webhook`.
+
+### 6. Update extension for production
+
+In `apps/extension/.env`, set:
+```env
+PLASMO_PUBLIC_API_BASE_URL=https://yourapp.vercel.app
+PLASMO_PUBLIC_WEB_URL=https://yourapp.vercel.app
+```
+Then rebuild: `npm run build -w @promptrefiner/extension`
 
 ## API endpoints
 
