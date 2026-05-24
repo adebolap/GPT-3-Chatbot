@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "echo 'Legacy Express server — active API is in apps/web/src/app/api'",
     "start": "node dist/server.js"
   },
   "dependencies": {
