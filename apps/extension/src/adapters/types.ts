@@ -1,6 +1,7 @@
 export interface SiteAdapter {
-  detectInput(): HTMLTextAreaElement | HTMLElement | null
-  getPromptText(input: HTMLTextAreaElement | HTMLElement): string
-  setPromptText(input: HTMLTextAreaElement | HTMLElement, text: string): void
-  injectButton(input: HTMLTextAreaElement | HTMLElement, onClick: () => void): HTMLButtonElement
+  detectInput(): HTMLElement | null
+  getPromptText(input: HTMLElement): string
+  setPromptText(input: HTMLElement, text: string): void
+  injectButton(input: HTMLElement, onClick: () => void): HTMLButtonElement
+  cleanupButton(btn: HTMLButtonElement): void
 }
