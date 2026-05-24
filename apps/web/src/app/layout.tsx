@@ -1,24 +1,27 @@
+import { ClerkProvider } from "@clerk/nextjs"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "PromptRefiner — Better prompts, better AI results",
+  title: "Cortex — Your AI memory layer",
   description:
-    "Automatically refine your AI prompts before sending them to ChatGPT, Claude, Gemini, and more.",
+    "Never re-explain yourself to an AI again. Cortex injects your context into every chat on ChatGPT, Claude, Gemini and more.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-          background: "#fff",
-          color: "#111827",
-        }}
-      >
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          style={{
+            margin: 0,
+            fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+            background: "#fff",
+            color: "#111827",
+          }}
+        >
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

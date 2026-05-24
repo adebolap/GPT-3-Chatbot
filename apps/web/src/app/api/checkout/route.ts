@@ -9,16 +9,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-user-id",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 }
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS })
 }
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
-    const auth = await getAuthContext(req)
+    const { userId } = await getAuthContext()
 
     const appUrl =
       process.env.APP_URL ||
@@ -27,17 +27,14 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
-      success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/billing/success`,
       cancel_url: `${appUrl}/billing/cancel`,
-      ...(auth.isAuthenticated && { client_reference_id: auth.userId }),
+      ...(userId && { client_reference_id: userId }),
     })
 
     return NextResponse.json({ url: session.url }, { headers: CORS })
   } catch (err) {
     console.error("checkout error:", err)
-    return NextResponse.json(
-      { error: "Failed to create checkout session" },
-      { status: 500, headers: CORS }
-    )
+    return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500, headers: CORS })
   }
 }
