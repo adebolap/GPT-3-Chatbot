@@ -24,16 +24,21 @@ export async function POST(req: Request) {
   if (!tokenRow) return NextResponse.json({ error: "Invalid token" }, { status: 401, headers: CORS })
 
   const body = await req.json()
-  const conversations: any[] = body.conversations ?? []
-  if (conversations.length === 0) return NextResponse.json({ synced: 0 }, { headers: CORS })
+  const raw: any[] = Array.isArray(body.conversations) ? body.conversations : []
+  if (raw.length === 0) return NextResponse.json({ synced: 0 }, { headers: CORS })
+
+  const ALLOWED_MODELS = new Set(["chatgpt", "claude", "gemini", "other"])
+  const conversations = raw.slice(0, 500).filter(
+    (c) => c && typeof c.startedAt === "number" && isFinite(c.startedAt)
+  )
 
   const rows = conversations.map((c) => ({
     user_id: tokenRow.user_id,
-    model: c.model ?? "other",
-    url: c.url ?? "",
-    title: c.title ?? "",
-    persona_name: c.personaName ?? "",
-    started_at: c.startedAt,
+    model: ALLOWED_MODELS.has(c.model) ? c.model : "other",
+    url: String(c.url ?? "").slice(0, 2048),
+    title: String(c.title ?? "").slice(0, 500),
+    persona_name: String(c.personaName ?? "").slice(0, 100),
+    started_at: Math.floor(c.startedAt),
   }))
 
   const { error } = await getSupabaseAdmin()
