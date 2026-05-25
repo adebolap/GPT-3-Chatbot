@@ -40,6 +40,8 @@ CLERK_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_LS_CHECKOUT_URL=https://yourstore.lemonsqueezy.com/checkout/buy/VARIANT_ID
 LEMON_SQUEEZY_WEBHOOK_SECRET=whsec_...
 APP_URL=http://localhost:3000
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
 ### `apps/extension/.env`
@@ -49,7 +51,7 @@ PLASMO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 PLASMO_PUBLIC_WEB_URL=http://localhost:3000
 ```
 
-That's it — 5 env vars total, no database setup required, no tax registration needed.
+The Supabase vars are only required for Pro cloud sync (see "Set up Supabase" below).
 
 ## Local development
 
@@ -59,7 +61,15 @@ That's it — 5 env vars total, no database setup required, no tax registration 
 2. Enable **Email** sign-in method
 3. Copy **Publishable key** and **Secret key**
 
-### 2. Set up Lemon Squeezy
+### 2. Set up Supabase (Pro cloud sync)
+
+1. Go to [supabase.com](https://supabase.com) → **New project**
+2. In **SQL Editor**, paste and run `supabase-schema.sql` from the repo root
+3. Go to **Project Settings → API**
+4. Copy **Project URL** → `SUPABASE_URL`
+5. Copy **service_role secret** → `SUPABASE_SERVICE_ROLE_KEY`
+
+### 3. Set up Lemon Squeezy
 
 1. [app.lemonsqueezy.com](https://app.lemonsqueezy.com) → Create a store
 2. **Products** → New product → Contxt Pro, €49/year recurring subscription
@@ -68,7 +78,7 @@ That's it — 5 env vars total, no database setup required, no tax registration 
 5. Enable events: `order_created`, `subscription_cancelled`, `subscription_payment_failed`
 6. Copy the **Signing secret** → `LEMON_SQUEEZY_WEBHOOK_SECRET`
 
-### 3. Install and run
+### 4. Install and run
 
 ```bash
 npm install
@@ -84,12 +94,12 @@ npm run dev -w @contxt/extension
 # → apps/extension/.plasmo/chrome-mv3-dev/
 ```
 
-### 4. Load extension in Chrome
+### 5. Load extension in Chrome
 
 1. `chrome://extensions` → Enable **Developer mode**
 2. **Load unpacked** → select `apps/extension/.plasmo/chrome-mv3-dev/`
 
-### 5. Lemon Squeezy webhook (local)
+### 6. Lemon Squeezy webhook (local)
 
 Use [ngrok](https://ngrok.com) or similar to expose your local server:
 
@@ -119,7 +129,7 @@ ngrok http 3000
 ## Roadmap
 
 - [ ] Clerk auth in extension popup (sign in for cloud sync)
-- [ ] Supabase cloud sync for Pro conversations
+- [x] Supabase cloud sync for Pro conversations
 - [ ] Smart recall — surface similar past conversations
 - [ ] Team personas — share context across a team
 - [ ] Firefox support

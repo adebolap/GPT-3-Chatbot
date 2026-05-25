@@ -19,6 +19,9 @@ export function NavAuth() {
         </SignUpButton>
       </SignedOut>
       <SignedIn>
+        <Link href="/dashboard" style={{ color: "#6b7280", fontSize: 14, textDecoration: "none", fontWeight: 500 }}>
+          Dashboard
+        </Link>
         <UserButton />
       </SignedIn>
       <Link href="/billing" style={{ background: "#7c3aed", color: "#fff", padding: "8px 18px", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
