@@ -2,23 +2,18 @@
 
 import { useUser } from "@clerk/nextjs"
 import Link from "next/link"
-import { useState } from "react"
+
+const LS_CHECKOUT_URL = process.env.NEXT_PUBLIC_LS_CHECKOUT_URL ?? ""
 
 export default function BillingPage() {
   const { user, isLoaded } = useUser()
-  const [loading, setLoading] = useState(false)
   const isPro = (user?.publicMetadata as any)?.plan === "pro"
 
-  const handleCheckout = async () => {
-    setLoading(true)
-    const res = await fetch("/api/checkout", { method: "POST" }).catch(() => null)
-    if (res?.ok) {
-      const { url } = await res.json()
-      window.location.href = url
-    } else {
-      setLoading(false)
-      alert("Failed to open checkout. Please try again.")
-    }
+  const handleCheckout = () => {
+    const url = user?.id
+      ? `${LS_CHECKOUT_URL}?checkout[custom][clerk_user_id]=${user.id}`
+      : LS_CHECKOUT_URL
+    window.location.href = url
   }
 
   return (
@@ -62,12 +57,11 @@ export default function BillingPage() {
 
             <button
               onClick={handleCheckout}
-              disabled={loading}
-              style={{ width: "100%", padding: 14, background: "#111827", color: "#fff", border: "none", borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.7 : 1 }}
+              style={{ width: "100%", padding: 14, background: "#111827", color: "#fff", border: "none", borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
             >
-              {loading ? "Redirecting…" : "Subscribe — €49/year"}
+              Subscribe — €49/year
             </button>
-            <p style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", marginTop: 12 }}>Secure checkout via Stripe. Cancel anytime.</p>
+            <p style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", marginTop: 12 }}>Secure checkout via Lemon Squeezy. Cancel anytime.</p>
           </>
         )}
       </div>

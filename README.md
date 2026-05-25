@@ -15,7 +15,7 @@ A browser extension that injects your context into every new LLM conversation an
 apps/
   extension/   Plasmo MV3 extension — context injection + local memory
   api/         Legacy Express server (unused — see apps/web/src/app/api)
-  web/         Next.js 14 — landing page, auth (Clerk), billing (Stripe)
+  web/         Next.js 14 — landing page, auth (Clerk), billing (Lemon Squeezy)
 packages/
   shared/      Shared TypeScript types
 ```
@@ -26,7 +26,7 @@ packages/
 |---|---|
 | Extension | Plasmo + React + TypeScript + Dexie.js |
 | Auth | Clerk (drop-in, works in extension popup) |
-| Billing | Stripe Checkout |
+| Billing | Lemon Squeezy (merchant of record — handles EU VAT automatically) |
 | Web | Next.js 14 on Vercel |
 | Local storage | Dexie.js (IndexedDB, no backend needed) |
 
@@ -37,9 +37,8 @@ packages/
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PRICE_ID=price_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_LS_CHECKOUT_URL=https://yourstore.lemonsqueezy.com/checkout/buy/VARIANT_ID
+LEMON_SQUEEZY_WEBHOOK_SECRET=whsec_...
 APP_URL=http://localhost:3000
 ```
 
@@ -50,7 +49,7 @@ PLASMO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 PLASMO_PUBLIC_WEB_URL=http://localhost:3000
 ```
 
-That's it — 6 env vars total, no database setup required.
+That's it — 5 env vars total, no database setup required, no tax registration needed.
 
 ## Local development
 
@@ -60,11 +59,14 @@ That's it — 6 env vars total, no database setup required.
 2. Enable **Email** sign-in method
 3. Copy **Publishable key** and **Secret key**
 
-### 2. Set up Stripe
+### 2. Set up Lemon Squeezy
 
-1. [dashboard.stripe.com](https://dashboard.stripe.com) → Test mode
-2. Create a product (Cortex Pro, €49/year recurring)
-3. Copy the **Price ID** and **Secret key**
+1. [app.lemonsqueezy.com](https://app.lemonsqueezy.com) → Create a store
+2. **Products** → New product → Cortex Pro, €49/year recurring subscription
+3. Copy the **Variant checkout URL** → `NEXT_PUBLIC_LS_CHECKOUT_URL`
+4. **Settings → Webhooks** → Add webhook pointing at your URL
+5. Enable events: `order_created`, `subscription_cancelled`, `subscription_payment_failed`
+6. Copy the **Signing secret** → `LEMON_SQUEEZY_WEBHOOK_SECRET`
 
 ### 3. Install and run
 
@@ -87,21 +89,23 @@ npm run dev -w @cortex/extension
 1. `chrome://extensions` → Enable **Developer mode**
 2. **Load unpacked** → select `apps/extension/.plasmo/chrome-mv3-dev/`
 
-### 5. Stripe webhook (local)
+### 5. Lemon Squeezy webhook (local)
+
+Use [ngrok](https://ngrok.com) or similar to expose your local server:
 
 ```bash
-stripe listen --forward-to http://localhost:3000/api/stripe-webhook
-# Copy the whsec_... secret → STRIPE_WEBHOOK_SECRET in .env.local
+ngrok http 3000
+# Use https://xxx.ngrok.io/api/lemon-webhook as the webhook URL in LS dashboard
 ```
 
 ## Deploy to Vercel
 
 1. Import repo → set **Root Directory** to `apps/web`
-2. Add the 5 `apps/web/.env.local` vars in Vercel dashboard
+2. Add the 4 `apps/web/.env.local` vars in Vercel dashboard
 3. Set `APP_URL` to your Vercel domain
 4. Deploy
-5. Update Stripe webhook to `https://yourapp.vercel.app/api/stripe-webhook`
-6. In Clerk dashboard → **JWT Templates** → set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` redirect URLs to your Vercel domain
+5. Update Lemon Squeezy webhook URL to `https://yourapp.vercel.app/api/lemon-webhook`
+6. In Clerk dashboard → **JWT Templates** → set redirect URLs to your Vercel domain
 
 ## Free vs Pro
 
