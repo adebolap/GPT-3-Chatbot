@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase-admin"
+import { getSupabaseAdmin } from "@/lib/supabase-admin"
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "").trim()
   if (!token) return NextResponse.json({ error: "Missing token" }, { status: 401, headers: CORS })
 
-  const { data: tokenRow } = await supabaseAdmin
+  const { data: tokenRow } = await getSupabaseAdmin()
     .from("sync_tokens")
     .select("user_id")
     .eq("token", token)
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     started_at: c.startedAt,
   }))
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from("conversations")
     .upsert(rows, { onConflict: "user_id,url,started_at", ignoreDuplicates: true })
 

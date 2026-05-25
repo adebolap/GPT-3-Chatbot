@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 import { getAuthContext } from "@/lib/auth"
-import { supabaseAdmin } from "@/lib/supabase-admin"
+import { getSupabaseAdmin } from "@/lib/supabase-admin"
 
 export async function GET() {
   const { userId } = await getAuthContext()
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { data: conversations } = await supabaseAdmin
+  const { data: conversations } = await getSupabaseAdmin()
     .from("conversations")
     .select("id, model, url, title, persona_name, started_at, synced_at")
     .eq("user_id", userId)

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAuthContext } from "@/lib/auth"
-import { supabaseAdmin } from "@/lib/supabase-admin"
+import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { randomUUID } from "crypto"
 
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (!isPro) return NextResponse.json({ error: "Pro required" }, { status: 403 })
 
-  const { data: existing } = await supabaseAdmin
+  const { data: existing } = await getSupabaseAdmin()
     .from("sync_tokens")
     .select("token")
     .eq("user_id", userId)
@@ -17,6 +17,6 @@ export async function GET() {
   if (existing) return NextResponse.json({ token: existing.token })
 
   const token = randomUUID()
-  await supabaseAdmin.from("sync_tokens").insert({ user_id: userId, token })
+  await getSupabaseAdmin().from("sync_tokens").insert({ user_id: userId, token })
   return NextResponse.json({ token })
 }
