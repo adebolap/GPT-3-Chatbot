@@ -1,51 +1,46 @@
-import type { RefineResponse, RefinementMode, UsageInfo, UserProfile } from "@promptrefiner/shared/src/types"
-import { getDeviceId, getAuthToken } from "./storage"
+const getWebUrl = () => process.env.PLASMO_PUBLIC_WEB_URL || "http://localhost:3000"
 
-const getBaseUrl = () =>
-  process.env.PLASMO_PUBLIC_API_BASE_URL || "http://localhost:8787"
+const SYNC_TOKEN_KEY = "contxt_sync_token"
 
-async function buildHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  const token = await getAuthToken()
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  } else {
-    const deviceId = await getDeviceId()
-    headers["x-user-id"] = deviceId
+export function getSyncToken(): Promise<string | null> {
+  return new Promise((resolve) =>
+    chrome.storage.local.get([SYNC_TOKEN_KEY], (r) => resolve(r[SYNC_TOKEN_KEY] ?? null))
+  )
+}
+
+export function setSyncToken(token: string): Promise<void> {
+  return new Promise((resolve) =>
+    chrome.storage.local.set({ [SYNC_TOKEN_KEY]: token }, resolve)
+  )
+}
+
+export function clearSyncToken(): Promise<void> {
+  return new Promise((resolve) =>
+    chrome.storage.local.remove(SYNC_TOKEN_KEY, resolve)
+  )
+}
+
+export async function syncConversations(
+  conversations: Array<{
+    model: string
+    url: string
+    title: string
+    personaName: string
+    startedAt: number
+  }>
+): Promise<{ synced: number } | null> {
+  const token = await getSyncToken()
+  if (!token || conversations.length === 0) return null
+
+  try {
+    const res = await fetch(`${getWebUrl()}/api/sync/conversations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ conversations }),
+    })
+    if (!res.ok) return null
+    return res.json()
+  } catch {
+    return null
   }
-  return headers
-}
-
-export async function refinePrompt(
-  prompt: string,
-  mode: RefinementMode
-): Promise<RefineResponse> {
-  const headers = await buildHeaders()
-  const res = await fetch(`${getBaseUrl()}/api/refine`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ prompt, mode }),
-  })
-  if (res.status === 429) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(
-      body.error || "Free tier limit reached. Upgrade to Pro for unlimited refinements."
-    )
-  }
-  if (!res.ok) throw new Error("Failed to refine prompt. Check your connection and try again.")
-  return res.json()
-}
-
-export async function fetchUsage(): Promise<UsageInfo> {
-  const headers = await buildHeaders()
-  const res = await fetch(`${getBaseUrl()}/api/usage`, { headers })
-  if (!res.ok) throw new Error("Failed to fetch usage")
-  return res.json()
-}
-
-export async function fetchMe(): Promise<UserProfile> {
-  const headers = await buildHeaders()
-  const res = await fetch(`${getBaseUrl()}/api/me`, { headers })
-  if (!res.ok) throw new Error("Failed to fetch profile")
-  return res.json()
 }
