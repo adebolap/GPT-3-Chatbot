@@ -2,8 +2,8 @@ import Link from "next/link"
 import { NavAuth } from "./NavAuth"
 
 const STEPS = [
-  { n: "1", title: "Define yourself once", desc: "Tell Cortex your role, what you're working on, and how you like responses." },
-  { n: "2", title: "Chat normally", desc: "Open ChatGPT, Claude, or Gemini and type as usual. Cortex is watching." },
+  { n: "1", title: "Define yourself once", desc: "Tell Contxt your role, what you're working on, and how you like responses." },
+  { n: "2", title: "Chat normally", desc: "Open ChatGPT, Claude, or Gemini and type as usual. Contxt is watching." },
   { n: "3", title: "Context auto-applied", desc: "Your first message gets your context silently prepended. The AI knows who you are." },
 ]
 
@@ -19,7 +19,7 @@ export default function Home() {
     <>
       {/* Nav */}
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 40px", borderBottom: "1px solid #f3f4f6", position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
-        <span style={{ fontWeight: 700, fontSize: 16 }}>✦ Cortex</span>
+        <span style={{ fontWeight: 700, fontSize: 16 }}>✦ Contxt</span>
         <NavAuth />
       </nav>
 
@@ -32,7 +32,7 @@ export default function Home() {
           Never re-explain<br />yourself to an AI.
         </h1>
         <p style={{ fontSize: 18, color: "#6b7280", lineHeight: 1.65, margin: "0 0 36px" }}>
-          Cortex is a browser extension that injects your context into every new LLM conversation automatically — and remembers everything you've ever discussed.
+          Contxt is a browser extension that injects your context into every new LLM conversation automatically — and remembers everything you've ever discussed.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <a href="#" style={{ background: "#111827", color: "#fff", padding: "14px 28px", borderRadius: 12, textDecoration: "none", fontSize: 16, fontWeight: 700 }}>
@@ -108,7 +108,7 @@ export default function Home() {
       </section>
 
       <footer style={{ textAlign: "center", padding: "32px 24px", fontSize: 13, color: "#9ca3af", borderTop: "1px solid #f3f4f6" }}>
-        © {new Date().getFullYear()} Cortex ·{" "}
+        © {new Date().getFullYear()} Contxt ·{" "}
         <Link href="/sign-in" style={{ color: "#6b7280" }}>Sign in</Link>
       </footer>
     </>

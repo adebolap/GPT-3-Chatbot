@@ -2,9 +2,9 @@ import { ClerkProvider } from "@clerk/nextjs"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Cortex — Your AI memory layer",
+  title: "Contxt — Your AI memory layer",
   description:
-    "Never re-explain yourself to an AI again. Cortex injects your context into every chat on ChatGPT, Claude, Gemini and more.",
+    "Never re-explain yourself to an AI again. Contxt injects your context into every chat on ChatGPT, Claude, Gemini and more.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

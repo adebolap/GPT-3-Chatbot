@@ -20,7 +20,7 @@ export default function BillingPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, background: "#f9fafb", fontFamily: "system-ui,sans-serif" }}>
       <div style={{ background: "#fff", borderRadius: 20, padding: 40, width: "100%", maxWidth: 420, boxShadow: "0 4px 24px rgba(0,0,0,.08)" }}>
         <Link href="/" style={{ textDecoration: "none", color: "#111827", display: "inline-block", marginBottom: 24, fontWeight: 700 }}>
-          ✦ Cortex
+          ✦ Contxt
         </Link>
 
         {!isLoaded ? (
@@ -35,7 +35,7 @@ export default function BillingPage() {
             <div style={{ display: "inline-block", background: "#7c3aed", color: "#fff", fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, marginBottom: 16 }}>
               Early-bird
             </div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Cortex Pro</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Contxt Pro</h1>
             <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.02em", margin: "8px 0 4px" }}>
               €49 <span style={{ fontSize: 16, fontWeight: 400, color: "#6b7280" }}>/year</span>
             </div>

@@ -8,8 +8,8 @@ export interface Persona {
   createdAt: number
 }
 
-const PERSONAS_KEY = "cortex_personas"
-const ACTIVE_KEY = "cortex_active_persona"
+const PERSONAS_KEY = "contxt_personas"
+const ACTIVE_KEY = "contxt_active_persona"
 
 function get<T>(key: string): Promise<T | null> {
   return new Promise((resolve) =>
@@ -45,11 +45,11 @@ export async function getActivePersona(): Promise<Persona | null> {
 }
 
 export function buildContextBlock(p: Persona): string {
-  const lines = ["[Cortex Context]"]
+  const lines = ["[Contxt Context]"]
   if (p.role) lines.push(`Role: ${p.role}`)
   if (p.context) lines.push(`Context: ${p.context}`)
   if (p.tone) lines.push(`Response style: ${p.tone}`)
-  lines.push("[/Cortex Context]", "")
+  lines.push("[/Contxt Context]", "")
   return lines.join("\n")
 }
 

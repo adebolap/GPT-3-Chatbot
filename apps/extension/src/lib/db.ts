@@ -10,18 +10,18 @@ export interface StoredConversation {
   startedAt: number
 }
 
-class CortexDB extends Dexie {
+class ContxtDB extends Dexie {
   conversations!: Table<StoredConversation>
 
   constructor() {
-    super("cortex-v1")
+    super("contxt-v1")
     this.version(1).stores({
       conversations: "++id, model, startedAt",
     })
   }
 }
 
-export const db = new CortexDB()
+export const db = new ContxtDB()
 
 export const saveConversation = (c: Omit<StoredConversation, "id">) =>
   db.conversations.add(c)

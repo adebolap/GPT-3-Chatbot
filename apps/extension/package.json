@@ -1,5 +1,5 @@
 {
-  "name": "@cortex/extension",
+  "name": "@contxt/extension",
   "version": "0.1.0",
   "scripts": {
     "dev": "plasmo dev",

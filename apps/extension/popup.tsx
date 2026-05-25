@@ -135,7 +135,7 @@ function PersonaTab() {
       </div>
 
       <div style={{ marginTop: 14, padding: "10px 12px", background: "#f0fdf4", borderRadius: 8, fontSize: 12, color: "#166534" }}>
-        <strong>How it works:</strong> When you start a new chat on ChatGPT, Claude, or Gemini, Cortex silently prepends this context to your first message.
+        <strong>How it works:</strong> When you start a new chat on ChatGPT, Claude, or Gemini, Contxt silently prepends this context to your first message.
       </div>
     </div>
   )
@@ -232,7 +232,7 @@ export default function Popup() {
   return (
     <div style={c.wrap}>
       <div style={c.header}>
-        <div style={c.logo}>✦ Cortex</div>
+        <div style={c.logo}>✦ Contxt</div>
         <a
           href={`${WEB}/billing`}
           target="_blank"

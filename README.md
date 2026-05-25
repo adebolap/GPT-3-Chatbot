@@ -1,11 +1,11 @@
-# Cortex — Your AI Memory Layer
+# Contxt — Your AI Memory Layer
 
 A browser extension that injects your context into every new LLM conversation and remembers everything you've ever discussed — across ChatGPT, Claude, Gemini, and more.
 
 ## How it works
 
 1. You define a **persona** once (role, context, response style)
-2. Cortex **auto-prepends** it to your first message in every new chat
+2. Contxt **auto-prepends** it to your first message in every new chat
 3. Every conversation is **saved locally** (Dexie.js / IndexedDB)
 4. Search your entire AI history from the extension popup
 
@@ -62,7 +62,7 @@ That's it — 5 env vars total, no database setup required, no tax registration 
 ### 2. Set up Lemon Squeezy
 
 1. [app.lemonsqueezy.com](https://app.lemonsqueezy.com) → Create a store
-2. **Products** → New product → Cortex Pro, €49/year recurring subscription
+2. **Products** → New product → Contxt Pro, €49/year recurring subscription
 3. Copy the **Variant checkout URL** → `NEXT_PUBLIC_LS_CHECKOUT_URL`
 4. **Settings → Webhooks** → Add webhook pointing at your URL
 5. Enable events: `order_created`, `subscription_cancelled`, `subscription_payment_failed`
@@ -75,12 +75,12 @@ npm install
 
 # Terminal 1 — web app + API
 # Create apps/web/.env.local first
-npm run dev -w @cortex/web
+npm run dev -w @contxt/web
 # → http://localhost:3000
 
 # Terminal 2 — extension
 # Create apps/extension/.env first
-npm run dev -w @cortex/extension
+npm run dev -w @contxt/extension
 # → apps/extension/.plasmo/chrome-mv3-dev/
 ```
 
