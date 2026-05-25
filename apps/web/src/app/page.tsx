@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { NavAuth } from "./NavAuth"
 
 const STEPS = [
   { n: "1", title: "Define yourself once", desc: "Tell Cortex your role, what you're working on, and how you like responses." },
@@ -19,12 +20,7 @@ export default function Home() {
       {/* Nav */}
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 40px", borderBottom: "1px solid #f3f4f6", position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
         <span style={{ fontWeight: 700, fontSize: 16 }}>✦ Cortex</span>
-        <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-          <Link href="/sign-in" style={{ color: "#6b7280", textDecoration: "none", fontSize: 14 }}>Sign in</Link>
-          <Link href="/billing" style={{ background: "#111827", color: "#fff", padding: "8px 18px", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
-            Get Pro
-          </Link>
-        </div>
+        <NavAuth />
       </nav>
 
       {/* Hero */}

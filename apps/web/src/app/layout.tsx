@@ -9,19 +9,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body
-          style={{
-            margin: 0,
-            fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-            background: "#fff",
-            color: "#111827",
-          }}
-        >
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+          background: "#fff",
+          color: "#111827",
+        }}
+      >
+        <ClerkProvider>{children}</ClerkProvider>
+      </body>
+    </html>
   )
 }
