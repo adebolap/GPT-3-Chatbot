@@ -1,9 +1,10 @@
+import { ClerkProvider } from "@clerk/nextjs"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "PromptRefiner — Better prompts, better AI results",
+  title: "Cortex — Your AI memory layer",
   description:
-    "Automatically refine your AI prompts before sending them to ChatGPT, Claude, Gemini, and more.",
+    "Never re-explain yourself to an AI again. Cortex injects your context into every chat on ChatGPT, Claude, Gemini and more.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           color: "#111827",
         }}
       >
-        {children}
+        <ClerkProvider>{children}</ClerkProvider>
       </body>
     </html>
   )

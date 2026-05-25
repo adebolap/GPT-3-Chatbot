@@ -1,227 +1,125 @@
-# PromptRefiner
+# Cortex — Your AI Memory Layer
 
-A lightweight browser extension that refines rough prompts before sending them to ChatGPT, Claude, Gemini, or any LLM web app.
+A browser extension that injects your context into every new LLM conversation and remembers everything you've ever discussed — across ChatGPT, Claude, Gemini, and more.
+
+## How it works
+
+1. You define a **persona** once (role, context, response style)
+2. Cortex **auto-prepends** it to your first message in every new chat
+3. Every conversation is **saved locally** (Dexie.js / IndexedDB)
+4. Search your entire AI history from the extension popup
 
 ## Monorepo structure
 
 ```
 apps/
-  extension/   Plasmo MV3 extension (React + TypeScript)
-  api/         Express backend (Node.js, TypeScript)
-  web/         Next.js 14 marketing + auth + billing site
+  extension/   Plasmo MV3 extension — context injection + local memory
+  api/         Legacy Express server (unused — see apps/web/src/app/api)
+  web/         Next.js 14 — landing page, auth (Clerk), billing (Lemon Squeezy)
 packages/
   shared/      Shared TypeScript types
 ```
 
-## MVP features
+## Tech stack
 
-- **Site adapters** for ChatGPT, Claude, Gemini + generic fallback.
-- **Floating "✦ Refine" button** injected near the detected prompt input.
-- **7 refinement modes**: Default · Professional · Accuracy-first · Technical/Coding · Marketing · Shorter · Deep Research.
-- **Modal** with Original / Refined side-by-side view, plus **Replace**, **Copy**, and **Cancel** actions.
-- **Mode picker** in the modal and as a default-mode setting in the extension popup.
-- **Free tier**: 10 refinements/month (tracked per device ID for anonymous users, per Supabase user for signed-in users).
-- **Pro tier** (€29/year early-bird): unlimited refinements, saved styles, custom default mode — via Stripe Checkout.
-- **Stripe webhook** that updates `subscription_status` in Supabase on payment events.
-- **Secret masking** before any model call (API keys, passwords, tokens, card numbers).
-- **No hardcoded secrets** — all from `.env` files.
-
-## Supabase schema
-
-Run in your Supabase SQL editor:
-
-```sql
-create table users (
-  id uuid primary key,
-  email text not null unique,
-  stripe_customer_id text,
-  subscription_status text default 'free',
-  plan text default 'free',
-  created_at timestamptz default now()
-);
-
-create table usage_events (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id),
-  refinement_count int not null default 0,
-  month text not null,
-  created_at timestamptz default now()
-);
-
--- Anonymous (device-based) usage — no FK to users
-create table device_usage (
-  device_id text not null,
-  month text not null,
-  refinement_count int not null default 0,
-  primary key (device_id, month)
-);
-
-create table prompt_preferences (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id),
-  default_mode text default 'default',
-  custom_style_instruction text,
-  allow_prompt_history boolean default false,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-```
+| Layer | Tech |
+|---|---|
+| Extension | Plasmo + React + TypeScript + Dexie.js |
+| Auth | Clerk (drop-in, works in extension popup) |
+| Billing | Lemon Squeezy (merchant of record — handles EU VAT automatically) |
+| Web | Next.js 14 on Vercel |
+| Local storage | Dexie.js (IndexedDB, no backend needed) |
 
 ## Environment variables
 
-> Never commit `.env` files — they are git-ignored.
-
-### `apps/web/.env.local` (web app + API routes)
+### `apps/web/.env.local`
 
 ```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...    # service role — never expose client-side
-
-# OpenAI
-OPENAI_API_KEY=sk-...
-REFINER_MODEL=gpt-4.1-mini          # optional
-
-# Stripe
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PRICE_ID=price_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-# App URL (set to your Vercel domain in production)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_LS_CHECKOUT_URL=https://yourstore.lemonsqueezy.com/checkout/buy/VARIANT_ID
+LEMON_SQUEEZY_WEBHOOK_SECRET=whsec_...
 APP_URL=http://localhost:3000
 ```
 
 ### `apps/extension/.env`
 
 ```env
-PLASMO_PUBLIC_API_BASE_URL=http://localhost:3000   # points to Next.js app
+PLASMO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 PLASMO_PUBLIC_WEB_URL=http://localhost:3000
-PLASMO_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-PLASMO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ```
 
-### `apps/api/.env` (only needed if running the standalone Express server)
-
-```env
-OPENAI_API_KEY=sk-...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PRICE_ID=price_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-APP_URL=http://localhost:3000
-SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-```
+That's it — 5 env vars total, no database setup required, no tax registration needed.
 
 ## Local development
 
-### 1. Install dependencies
+### 1. Set up Clerk
+
+1. Go to [clerk.com](https://clerk.com) → **Create application**
+2. Enable **Email** sign-in method
+3. Copy **Publishable key** and **Secret key**
+
+### 2. Set up Lemon Squeezy
+
+1. [app.lemonsqueezy.com](https://app.lemonsqueezy.com) → Create a store
+2. **Products** → New product → Cortex Pro, €49/year recurring subscription
+3. Copy the **Variant checkout URL** → `NEXT_PUBLIC_LS_CHECKOUT_URL`
+4. **Settings → Webhooks** → Add webhook pointing at your URL
+5. Enable events: `order_created`, `subscription_cancelled`, `subscription_payment_failed`
+6. Copy the **Signing secret** → `LEMON_SQUEEZY_WEBHOOK_SECRET`
+
+### 3. Install and run
 
 ```bash
 npm install
-```
 
-### 2. Run the web app (web UI + all API routes)
-
-```bash
+# Terminal 1 — web app + API
 # Create apps/web/.env.local first
-npm run dev -w @promptrefiner/web
-# App + API runs at http://localhost:3000
+npm run dev -w @cortex/web
+# → http://localhost:3000
+
+# Terminal 2 — extension
+# Create apps/extension/.env first
+npm run dev -w @cortex/extension
+# → apps/extension/.plasmo/chrome-mv3-dev/
 ```
 
-### 3. Run the extension
+### 4. Load extension in Chrome
+
+1. `chrome://extensions` → Enable **Developer mode**
+2. **Load unpacked** → select `apps/extension/.plasmo/chrome-mv3-dev/`
+
+### 5. Lemon Squeezy webhook (local)
+
+Use [ngrok](https://ngrok.com) or similar to expose your local server:
 
 ```bash
-# Create apps/extension/.env first (PLASMO_PUBLIC_API_BASE_URL=http://localhost:3000)
-npm run dev -w @promptrefiner/extension
-# Plasmo outputs to apps/extension/.plasmo/chrome-mv3-dev/
-```
-
-### 4. Load the extension in Chrome
-
-1. Open `chrome://extensions`
-2. Enable **Developer mode** (top right)
-3. Click **Load unpacked**
-4. Select `apps/extension/.plasmo/chrome-mv3-dev/`
-
-## Stripe local testing
-
-```bash
-# Install Stripe CLI: https://stripe.com/docs/stripe-cli
-stripe login
-stripe listen --forward-to http://localhost:3000/api/stripe-webhook
-# Copy the webhook signing secret into STRIPE_WEBHOOK_SECRET in apps/web/.env.local
+ngrok http 3000
+# Use https://xxx.ngrok.io/api/lemon-webhook as the webhook URL in LS dashboard
 ```
 
 ## Deploy to Vercel
 
-The `apps/web` Next.js app hosts both the marketing site and all API routes — one Vercel project.
+1. Import repo → set **Root Directory** to `apps/web`
+2. Add the 4 `apps/web/.env.local` vars in Vercel dashboard
+3. Set `APP_URL` to your Vercel domain
+4. Deploy
+5. Update Lemon Squeezy webhook URL to `https://yourapp.vercel.app/api/lemon-webhook`
+6. In Clerk dashboard → **JWT Templates** → set redirect URLs to your Vercel domain
 
-### 1. Import the repo
+## Free vs Pro
 
-Go to vercel.com → **Add New Project** → import `adebolap/GPT-3-Chatbot`.
+| | Free | Pro |
+|---|---|---|
+| Personas | 3 | Unlimited |
+| History | 90 days local | Full history + cloud sync |
+| Search | Local only | Across all devices |
+| Price | €0 | €49/year |
 
-### 2. Set the root directory
+## Roadmap
 
-In **Build & Output Settings**, set **Root Directory** to `apps/web`.
-
-### 3. Add environment variables
-
-In **Settings → Environment Variables**, add every key from `apps/web/.env.local` (without the `NEXT_PUBLIC_` variables being secret — those are safe to expose).
-
-Set `APP_URL` to your final Vercel domain (e.g. `https://promptrefiner.vercel.app`).
-
-### 4. Deploy
-
-Vercel auto-deploys on every push to `main`. API routes are available at `https://yourapp.vercel.app/api/*`.
-
-### 5. Update Stripe webhook endpoint
-
-In the Stripe Dashboard → **Webhooks**, point the endpoint to `https://yourapp.vercel.app/api/stripe-webhook`.
-
-### 6. Update extension for production
-
-In `apps/extension/.env`, set:
-```env
-PLASMO_PUBLIC_API_BASE_URL=https://yourapp.vercel.app
-PLASMO_PUBLIC_WEB_URL=https://yourapp.vercel.app
-```
-Then rebuild: `npm run build -w @promptrefiner/extension`
-
-## API endpoints
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/refine` | optional JWT | Refine a prompt |
-| POST | `/api/checkout` | optional JWT | Create Stripe Checkout session |
-| POST | `/api/stripe-webhook` | Stripe signature | Handle subscription events |
-| GET | `/api/me` | optional JWT | Current user profile |
-| GET | `/api/usage` | optional JWT | Monthly refinement count |
-
-## Refinement response shape
-
-```json
-{
-  "refinedPrompt": "...",
-  "detectedIntent": "coding | research | writing | analysis | general",
-  "missingContext": ["..."],
-  "confidence": "high | medium | low"
-}
-```
-
-## Security notes
-
-- Raw prompts are **not persisted** by default.
-- Secrets (API keys, passwords, tokens, card-like numbers) are masked before model calls.
-- Use a production-grade distributed rate limiter (Redis / Upstash) before public launch.
-- Add Supabase Row Level Security (RLS) policies to `usage_events` and `prompt_preferences`.
-- Verify `stripe-signature` header on every webhook — already implemented.
-
-## Roadmap / next steps
-
-- Add mode picker persistence via `prompt_preferences` table.
-- Add saved prompt styles for Pro users.
-- Add RLS policies to Supabase tables.
-- Ship to Chrome Web Store.
-- Add Firefox / Edge support (Plasmo MV2 target).
+- [ ] Clerk auth in extension popup (sign in for cloud sync)
+- [ ] Supabase cloud sync for Pro conversations
+- [ ] Smart recall — surface similar past conversations
+- [ ] Team personas — share context across a team
+- [ ] Firefox support

@@ -1,5 +1,5 @@
 {
-  "name": "@promptrefiner/extension",
+  "name": "@cortex/extension",
   "version": "0.1.0",
   "scripts": {
     "dev": "plasmo dev",
@@ -7,8 +7,7 @@
     "package": "plasmo package"
   },
   "dependencies": {
-    "@promptrefiner/shared": "*",
-    "@supabase/supabase-js": "^2.49.8",
+    "dexie": "^4.0.10",
     "plasmo": "^0.90.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
