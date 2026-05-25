@@ -8,8 +8,10 @@ import {
   type Persona,
 } from "./src/lib/personas"
 import { getRecent, searchConversations, getCount, type StoredConversation } from "./src/lib/db"
+import { getSyncToken, setSyncToken, clearSyncToken, syncConversations } from "./src/lib/api"
 
 const WEB = process.env.PLASMO_PUBLIC_WEB_URL || "http://localhost:3000"
+const FREE_PERSONA_LIMIT = 3
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const c = {
@@ -45,6 +47,8 @@ function PersonaTab() {
     })
   }, [])
 
+  const atLimit = personas.length >= FREE_PERSONA_LIMIT
+
   const selectPersona = async (id: string) => {
     setActiveId(id)
     await setActivePersonaId(id)
@@ -62,6 +66,7 @@ function PersonaTab() {
   }
 
   const handleNew = async () => {
+    if (atLimit) return
     const p = makePersona({ name: "New Persona", isDefault: false })
     const updated = [...personas, p]
     await savePersonas(updated)
@@ -129,12 +134,29 @@ function PersonaTab() {
       <div style={{ ...c.row, justifyContent: "space-between", marginTop: 14 }}>
         <button style={c.btn("ghost")} onClick={handleDelete} disabled={personas.length <= 1}>Delete</button>
         <div style={c.row}>
-          <button style={c.btn("ghost")} onClick={handleNew}>+ New</button>
+          {atLimit ? (
+            <a
+              href={`${WEB}/billing`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ fontSize: 12, color: "#7c3aed", textDecoration: "none", fontWeight: 600, padding: "8px 12px", background: "#f5f3ff", borderRadius: 8 }}
+            >
+              Upgrade for more →
+            </a>
+          ) : (
+            <button style={c.btn("ghost")} onClick={handleNew}>+ New</button>
+          )}
           <button style={c.btn("primary")} onClick={handleSave}>{saved ? "Saved ✓" : "Save"}</button>
         </div>
       </div>
 
-      <div style={{ marginTop: 14, padding: "10px 12px", background: "#f0fdf4", borderRadius: 8, fontSize: 12, color: "#166534" }}>
+      {atLimit && (
+        <div style={{ marginTop: 10, padding: "8px 12px", background: "#faf5ff", borderRadius: 8, fontSize: 12, color: "#7c3aed", border: "1px solid #e9d5ff" }}>
+          Free plan: {FREE_PERSONA_LIMIT} personas max. <a href={`${WEB}/billing`} target="_blank" rel="noreferrer" style={{ color: "#7c3aed", fontWeight: 700 }}>Upgrade to Pro</a> for unlimited.
+        </div>
+      )}
+
+      <div style={{ marginTop: 10, padding: "10px 12px", background: "#f0fdf4", borderRadius: 8, fontSize: 12, color: "#166534" }}>
         <strong>How it works:</strong> When you start a new chat on ChatGPT, Claude, or Gemini, Contxt silently prepends this context to your first message.
       </div>
     </div>
@@ -159,21 +181,52 @@ function MemoryTab() {
   const [conversations, setConversations] = useState<StoredConversation[]>([])
   const [query, setQuery] = useState("")
   const [count, setCount] = useState(0)
+  const [syncToken, setSyncTokenState] = useState<string | null>(null)
+  const [tokenInput, setTokenInput] = useState("")
+  const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "done" | "error">("idle")
 
   const load = useCallback(async (q: string) => {
     const results = q.trim() ? await searchConversations(q) : await getRecent()
     setConversations(results)
   }, [])
 
+  const doSync = useCallback(async () => {
+    setSyncStatus("syncing")
+    const convs = await getRecent(200)
+    const result = await syncConversations(convs)
+    setSyncStatus(result ? "done" : "error")
+  }, [])
+
   useEffect(() => {
     load("")
     getCount().then(setCount)
-  }, [load])
+    getSyncToken().then((t) => {
+      setSyncTokenState(t)
+      if (t) doSync()
+    })
+  }, [load, doSync])
 
   useEffect(() => {
     const t = setTimeout(() => load(query), 200)
     return () => clearTimeout(t)
   }, [query, load])
+
+  const handleSaveToken = async () => {
+    const t = tokenInput.trim()
+    if (!t) return
+    await setSyncToken(t)
+    setSyncTokenState(t)
+    setTokenInput("")
+    doSync()
+  }
+
+  const handleRemoveToken = async () => {
+    await clearSyncToken()
+    setSyncTokenState(null)
+    setSyncStatus("idle")
+  }
+
+  const syncLabel = syncStatus === "syncing" ? "Syncing…" : syncStatus === "done" ? "Synced ✓" : syncStatus === "error" ? "Sync failed" : ""
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -215,10 +268,37 @@ function MemoryTab() {
           ))
         )}
       </div>
+
+      {/* Cloud sync section */}
+      <div style={{ padding: "10px 16px", borderTop: "1px solid #f3f4f6", borderBottom: "1px solid #f3f4f6" }}>
+        {syncToken ? (
+          <div style={{ ...c.row, justifyContent: "space-between" }}>
+            <span style={{ fontSize: 12, color: syncStatus === "error" ? "#dc2626" : "#166534" }}>
+              ☁ {syncLabel || "Cloud sync active"}
+            </span>
+            <div style={c.row}>
+              <button onClick={doSync} style={{ fontSize: 11, color: "#6b7280", background: "none", border: "none", cursor: "pointer", padding: 0 }}>Sync now</button>
+              <button onClick={handleRemoveToken} style={{ fontSize: 11, color: "#9ca3af", background: "none", border: "none", cursor: "pointer", padding: 0 }}>Remove</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              style={{ ...c.input, fontSize: 12, flex: 1 }}
+              placeholder="Paste sync token from dashboard…"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveToken()}
+            />
+            <button style={{ ...c.btn("primary"), padding: "6px 12px", fontSize: 12 }} onClick={handleSaveToken}>Save</button>
+          </div>
+        )}
+      </div>
+
       <div style={c.footer}>
         <span>{count} conversation{count !== 1 ? "s" : ""} saved locally</span>
-        <a href={`${WEB}/billing`} target="_blank" rel="noreferrer" style={{ color: "#7c3aed", textDecoration: "none", fontWeight: 600 }}>
-          Cloud sync →
+        <a href={`${WEB}/dashboard`} target="_blank" rel="noreferrer" style={{ color: "#7c3aed", textDecoration: "none", fontWeight: 600 }}>
+          Dashboard →
         </a>
       </div>
     </div>
