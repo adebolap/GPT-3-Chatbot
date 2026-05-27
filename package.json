@@ -1,0 +1,14 @@
+{
+  "name": "promptrefiner-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @promptrefiner/api",
+    "dev:extension": "npm run dev -w @promptrefiner/extension",
+    "build:api": "npm run build -w @promptrefiner/api",
+    "build:extension": "npm run build -w @promptrefiner/extension"
+  }
+}
