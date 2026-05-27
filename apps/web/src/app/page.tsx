@@ -37,9 +37,9 @@ export default function Home() {
           Contxt is a browser extension that injects your context into every new LLM conversation automatically — and remembers everything you've ever discussed.
         </p>
         <div className="hero-cta">
-          <a href="#" style={{ background: "#111827", color: "#fff", padding: "14px 28px", borderRadius: 12, textDecoration: "none", fontSize: 16, fontWeight: 700 }}>
+          <Link href="/install" style={{ background: "#111827", color: "#fff", padding: "14px 28px", borderRadius: 12, textDecoration: "none", fontSize: 16, fontWeight: 700 }}>
             Install free — Chrome &amp; Edge
-          </a>
+          </Link>
           <Link href="/billing" style={{ background: "#f3f4f6", color: "#111827", padding: "14px 28px", borderRadius: 12, textDecoration: "none", fontSize: 16, fontWeight: 700 }}>
             Get Pro — €49/yr
           </Link>
@@ -85,7 +85,7 @@ export default function Home() {
             {
               name: "Free", price: "€0",
               features: ["3 personas", "90-day local history", "Context injection on all LLMs", "Chrome &amp; Edge support"],
-              cta: "Install extension", href: "#", highlight: false,
+              cta: "Install extension", href: "/install", highlight: false,
             },
             {
               name: "Pro", price: "€49", period: "/year", badge: "Early-bird",
