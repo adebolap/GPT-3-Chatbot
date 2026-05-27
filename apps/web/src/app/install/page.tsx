@@ -1,7 +1,6 @@
 import Link from "next/link"
 
-const GITHUB_REPO = "https://github.com/adebolap/GPT-3-Chatbot"
-const ZIP_URL = `${GITHUB_REPO}/raw/main/apps/extension/build/chrome-mv3-prod.zip`
+const ZIP_URL = "https://raw.githubusercontent.com/adebolap/GPT-3-Chatbot/main/apps/extension/build/chrome-mv3-prod.zip"
 
 const STEPS = [
   {
@@ -102,7 +101,8 @@ export default function InstallPage() {
                 {step.action && (
                   <a
                     href={step.action.href}
-                    download
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 8,
                       background: "#111827", color: "#fff",
