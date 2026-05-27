@@ -34,7 +34,7 @@ const c = {
 }
 
 // ── Persona Tab ───────────────────────────────────────────────────────────────
-function PersonaTab() {
+function PersonaTab({ isPro }: { isPro: boolean }) {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [editing, setEditing] = useState<Persona | null>(null)
@@ -49,7 +49,7 @@ function PersonaTab() {
     })
   }, [])
 
-  const atLimit = personas.length >= FREE_PERSONA_LIMIT
+  const atLimit = !isPro && personas.length >= FREE_PERSONA_LIMIT
 
   const selectPersona = async (id: string) => {
     setActiveId(id)
@@ -308,10 +308,17 @@ function MemoryTab() {
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
-function HeaderAuthClerk() {
-  const { isSignedIn } = useUser()
+function HeaderAuthClerk({ onPlan }: { onPlan: (isPro: boolean) => void }) {
+  const { isSignedIn, user } = useUser()
+  const isPro = (user?.publicMetadata as any)?.plan === "pro"
+
+  useEffect(() => { onPlan(isPro) }, [isPro, onPlan])
+
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      {isPro && (
+        <span style={{ fontSize: 10, fontWeight: 700, background: "#7c3aed", color: "#fff", padding: "2px 8px", borderRadius: 20 }}>PRO</span>
+      )}
       {isSignedIn ? (
         <UserButton />
       ) : (
@@ -321,38 +328,37 @@ function HeaderAuthClerk() {
           </button>
         </SignInButton>
       )}
-      <a
-        href={`${WEB}/billing`}
-        target="_blank"
-        rel="noreferrer"
-        style={{ fontSize: 11, fontWeight: 600, color: "#7c3aed", textDecoration: "none", background: "#f5f3ff", padding: "3px 10px", borderRadius: 20 }}
-      >
-        Get Pro
-      </a>
+      {!isPro && (
+        <a
+          href={`${WEB}/billing`}
+          target="_blank"
+          rel="noreferrer"
+          style={{ fontSize: 11, fontWeight: 600, color: "#7c3aed", textDecoration: "none", background: "#f5f3ff", padding: "3px 10px", borderRadius: 20 }}
+        >
+          Get Pro
+        </a>
+      )}
     </div>
   )
 }
 
-function HeaderAuth() {
-  if (!CLERK_KEY) return null
-  return <HeaderAuthClerk />
-}
-
 function PopupInner() {
   const [tab, setTab] = useState<"persona" | "memory">("persona")
+  const [isPro, setIsPro] = useState(false)
 
   return (
     <div style={c.wrap}>
       <div style={c.header}>
         <div style={c.logo}>✦ Contxt</div>
-        <HeaderAuth /></div>
+        {CLERK_KEY && <HeaderAuthClerk onPlan={setIsPro} />}
+      </div>
 
       <div style={c.tabs}>
         <button style={c.pill(tab === "persona")} onClick={() => setTab("persona")}>Persona</button>
         <button style={c.pill(tab === "memory")} onClick={() => setTab("memory")}>Memory</button>
       </div>
 
-      {tab === "persona" ? <PersonaTab /> : <MemoryTab />}
+      {tab === "persona" ? <PersonaTab isPro={isPro} /> : <MemoryTab />}
     </div>
   )
 }
