@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import "./globals.css"
 
 export const dynamic = "force-dynamic"
@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   title: "Contxt — Your AI memory layer",
   description:
     "Never re-explain yourself to an AI again. Contxt injects your context into every chat on ChatGPT, Claude, Gemini and more.",
-  viewport: "width=device-width, initial-scale=1",
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
