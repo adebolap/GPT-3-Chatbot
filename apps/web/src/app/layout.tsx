@@ -1,6 +1,8 @@
 import { ClerkProvider } from "@clerk/nextjs"
 import type { Metadata } from "next"
 
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Contxt — Your AI memory layer",
   description:

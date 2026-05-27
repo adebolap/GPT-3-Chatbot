@@ -5,5 +5,9 @@
   "scripts": {
     "build": "echo 'Configure per-app build commands'",
     "lint": "echo 'Add lint config'"
+  },
+  "overrides": {
+    "ox": "0.14.24",
+    "viem": "2.49.3"
   }
 }

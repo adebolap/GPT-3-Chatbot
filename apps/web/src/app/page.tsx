@@ -1,4 +1,6 @@
+"use client"
 import Link from "next/link"
+import { useState } from "react"
 import { NavAuth } from "./NavAuth"
 
 const STEPS = [
@@ -107,10 +109,69 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Email capture */}
+      <WaitlistSection />
+
       <footer style={{ textAlign: "center", padding: "32px 24px", fontSize: 13, color: "#9ca3af", borderTop: "1px solid #f3f4f6" }}>
         © {new Date().getFullYear()} Contxt ·{" "}
         <Link href="/sign-in" style={{ color: "#6b7280" }}>Sign in</Link>
       </footer>
     </>
+  )
+}
+
+function WaitlistSection() {
+  const [email, setEmail] = useState("")
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle")
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) return
+    setStatus("loading")
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      setStatus(res.ok ? "done" : "error")
+    } catch {
+      setStatus("error")
+    }
+  }
+
+  return (
+    <section style={{ background: "#111827", padding: "72px 24px", textAlign: "center" }}>
+      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+        <h2 style={{ fontSize: 28, fontWeight: 700, color: "#f9fafb", margin: "0 0 12px", letterSpacing: "-0.02em" }}>
+          Stay in the loop
+        </h2>
+        <p style={{ color: "#9ca3af", fontSize: 15, margin: "0 0 28px", lineHeight: 1.6 }}>
+          Get notified when we launch new features, including mobile support and team sharing.
+        </p>
+        {status === "done" ? (
+          <p style={{ color: "#4ade80", fontSize: 15, fontWeight: 600 }}>You're in! We'll be in touch.</p>
+        ) : (
+          <form onSubmit={submit} style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              style={{ padding: "12px 16px", borderRadius: 10, border: "1px solid #374151", background: "#1f2937", color: "#f9fafb", fontSize: 14, width: 260, outline: "none", fontFamily: "inherit" }}
+            />
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              style={{ padding: "12px 24px", borderRadius: 10, background: "#7c3aed", color: "#fff", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", fontFamily: "inherit" }}
+            >
+              {status === "loading" ? "Saving…" : "Notify me"}
+            </button>
+            {status === "error" && <p style={{ width: "100%", margin: 0, fontSize: 13, color: "#f87171" }}>Something went wrong — try again.</p>}
+          </form>
+        )}
+      </div>
+    </section>
   )
 }

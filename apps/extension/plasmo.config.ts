@@ -1,6 +1,7 @@
-import { defineConfig } from "plasmo"
-
-export default defineConfig({
+// plasmo@0.90.5 does not export `defineConfig` — use a plain object.
+// Manifest overrides (permissions, host_permissions) are read from
+// the "manifest" key in package.json at runtime.
+export default {
   manifest: {
     name: "Contxt — AI Memory",
     version: "0.1.0",
@@ -14,4 +15,4 @@ export default defineConfig({
       "https://gemini.google.com/*",
     ],
   },
-})
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
+import { ClerkProvider, SignInButton, UserButton, useUser } from "@clerk/chrome-extension"
 import {
   getPersonas,
   savePersonas,
@@ -11,6 +12,7 @@ import { getRecent, searchConversations, getCount, type StoredConversation } fro
 import { getSyncToken, setSyncToken, clearSyncToken, syncConversations } from "./src/lib/api"
 
 const WEB = process.env.PLASMO_PUBLIC_WEB_URL || "http://localhost:3000"
+const CLERK_KEY = process.env.PLASMO_PUBLIC_CLERK_PUBLISHABLE_KEY || ""
 const FREE_PERSONA_LIMIT = 3
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -306,22 +308,39 @@ function MemoryTab() {
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
-export default function Popup() {
+function HeaderAuth() {
+  const { isSignedIn } = useUser()
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      {isSignedIn ? (
+        <UserButton />
+      ) : (
+        <SignInButton mode="redirect">
+          <button style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", background: "none", border: "1px solid #e5e7eb", padding: "3px 10px", borderRadius: 20, cursor: "pointer", fontFamily: "inherit" }}>
+            Sign in
+          </button>
+        </SignInButton>
+      )}
+      <a
+        href={`${WEB}/billing`}
+        target="_blank"
+        rel="noreferrer"
+        style={{ fontSize: 11, fontWeight: 600, color: "#7c3aed", textDecoration: "none", background: "#f5f3ff", padding: "3px 10px", borderRadius: 20 }}
+      >
+        Get Pro
+      </a>
+    </div>
+  )
+}
+
+function PopupInner() {
   const [tab, setTab] = useState<"persona" | "memory">("persona")
 
   return (
     <div style={c.wrap}>
       <div style={c.header}>
         <div style={c.logo}>✦ Contxt</div>
-        <a
-          href={`${WEB}/billing`}
-          target="_blank"
-          rel="noreferrer"
-          style={{ fontSize: 11, fontWeight: 600, color: "#7c3aed", textDecoration: "none", background: "#f5f3ff", padding: "3px 10px", borderRadius: 20 }}
-        >
-          Get Pro
-        </a>
-      </div>
+        <HeaderAuth /></div>
 
       <div style={c.tabs}>
         <button style={c.pill(tab === "persona")} onClick={() => setTab("persona")}>Persona</button>
@@ -330,5 +349,13 @@ export default function Popup() {
 
       {tab === "persona" ? <PersonaTab /> : <MemoryTab />}
     </div>
+  )
+}
+
+export default function Popup() {
+  return (
+    <ClerkProvider publishableKey={CLERK_KEY} routerPush={(to) => { window.location.href = to }} routerReplace={(to) => { window.location.replace(to) }}>
+      <PopupInner />
+    </ClerkProvider>
   )
 }
