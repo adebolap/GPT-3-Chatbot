@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["chrome", "node"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": [
+    ".plasmo/index.d.ts",
+    "src",
+    "plasmo.config.ts"
+  ]
+}
