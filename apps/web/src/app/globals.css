@@ -1,0 +1,146 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Responsive nav ─────────────────────────────────────────────────────────── */
+.site-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 40px;
+  border-bottom: 1px solid #f3f4f6;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────────────── */
+.hero-section {
+  text-align: center;
+  padding: 100px 24px 80px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Section wrappers ───────────────────────────────────────────────────────── */
+.section-inner {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ── Grids ──────────────────────────────────────────────────────────────────── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 32px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* ── Billing card ───────────────────────────────────────────────────────────── */
+.billing-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Email form ─────────────────────────────────────────────────────────────── */
+.email-form {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.email-input {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #374151;
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 14px;
+  width: 260px;
+  outline: none;
+  font-family: inherit;
+}
+
+/* ── Badge ──────────────────────────────────────────────────────────────────── */
+.browser-badge {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── Mobile breakpoint ──────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .site-nav {
+    padding: 12px 16px;
+  }
+
+  .hero-section {
+    padding: 56px 16px 48px;
+  }
+
+  .hero-cta a,
+  .hero-cta button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .steps-grid,
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-card {
+    padding: 24px 20px;
+  }
+
+  .email-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .email-input {
+    width: 100%;
+  }
+
+  section {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
