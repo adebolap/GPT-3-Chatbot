@@ -35,7 +35,7 @@ let injectedForUrl = ""
 let savedForUrl = ""
 let currentUrl = location.href
 
-// ── Persona cache (keeps sync cheap) ─────────────────────────────────────────
+// ── Persona cache ─────────────────────────────────────────────────────────────
 async function refreshPersona() {
   cachedPersona = await getActivePersona()
   updateBadge()
@@ -100,23 +100,12 @@ function showToast(msg: string) {
   setTimeout(() => t.remove(), 2500)
 }
 
-// ── Context injection ─────────────────────────────────────────────────────────
-function injectContext(input: HTMLElement) {
-  if (injectedForUrl === location.href) return
-  if (!cachedPersona) return
-
-  const { role, context, tone } = cachedPersona
-  if (!role && !context && !tone) return
-
+// ── Core: handle a send action ────────────────────────────────────────────────
+function handleSend(input: HTMLElement) {
   const text = adapter.getPromptText(input)
   if (!text.trim()) return
 
-  const enriched = buildContextBlock(cachedPersona) + text
-  adapter.setPromptText(input, enriched)
-  injectedForUrl = location.href
-
-  showToast(`✦ ${cachedPersona.name} context active`)
-
+  // 1. Always save the conversation on first send for this URL
   if (savedForUrl !== location.href) {
     savedForUrl = location.href
     saveConversation({
@@ -124,10 +113,21 @@ function injectContext(input: HTMLElement) {
       model: getModel(),
       title: text.slice(0, 100),
       firstMessage: text.slice(0, 500),
-      personaName: cachedPersona.name,
+      personaName: cachedPersona?.name ?? "—",
       startedAt: Date.now(),
     }).catch(console.error)
   }
+
+  // 2. Inject persona context (only once per URL, only if persona has content)
+  if (injectedForUrl === location.href) return
+  if (!cachedPersona) return
+  const { role, context, tone } = cachedPersona
+  if (!role && !context && !tone) return
+
+  const enriched = buildContextBlock(cachedPersona) + text
+  adapter.setPromptText(input, enriched)
+  injectedForUrl = location.href
+  showToast(`✦ ${cachedPersona.name} context active`)
 }
 
 // ── Submit hooks ──────────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ function watchInput(input: HTMLElement) {
     "keydown",
     (e) => {
       if ((e as KeyboardEvent).key === "Enter" && !(e as KeyboardEvent).shiftKey) {
-        injectContext(input)
+        handleSend(input)
       }
     },
     { capture: true }
@@ -148,11 +148,18 @@ function watchInput(input: HTMLElement) {
 
 function watchSendButton() {
   const btn = document.querySelector<HTMLElement>(
-    '[data-testid="send-button"],[aria-label="Send message"],[aria-label="Send"]'
+    // ChatGPT
+    '[data-testid="send-button"],' +
+    // Claude
+    '[aria-label="Send message"],[aria-label="Send Message"],' +
+    // Gemini
+    '[aria-label="Send"],.send-button,[mattooltip="Send message"],' +
+    // Generic fallback
+    'button[type="submit"]'
   )
   if (!btn || (btn as any).__cx_watched) return
   ;(btn as any).__cx_watched = true
-  btn.addEventListener("click", () => activeInput && injectContext(activeInput), {
+  btn.addEventListener("click", () => activeInput && handleSend(activeInput), {
     capture: true,
   })
 }
@@ -163,6 +170,8 @@ function checkUrlChange() {
     currentUrl = location.href
     injectedForUrl = ""
     savedForUrl = ""
+    // Re-watch new inputs on URL change
+    activeInput = null
   }
 }
 
