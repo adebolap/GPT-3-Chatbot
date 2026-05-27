@@ -9,27 +9,34 @@ export class GenericTextboxAdapter implements SiteAdapter {
   }
 
   getPromptText(input: HTMLElement): string {
-    return input instanceof HTMLTextAreaElement
-      ? input.value
-      : input.textContent || ""
+    if (input instanceof HTMLTextAreaElement) return input.value
+    // innerText respects line breaks; fall back to textContent
+    return (input as HTMLElement).innerText || input.textContent || ""
   }
 
-  setPromptText(input: HTMLElement, text: string): void {
+  setPromptText(input: HTMLElement, text: string): boolean {
     if (input instanceof HTMLTextAreaElement) {
-      // Native setter triggers React/Vue controlled input detection
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        "value"
-      )?.set
-      setter?.call(input, text)
-      input.dispatchEvent(new Event("input", { bubbles: true }))
-      input.dispatchEvent(new Event("change", { bubbles: true }))
-      return
+      return this._setTextarea(input, text)
     }
-    // contenteditable (ProseMirror / Quill)
-    // Select all content via Selection API, then dispatch beforeinput which
-    // ProseMirror and Quill both handle to replace the selection.
+    return this._setContentEditable(input, text)
+  }
+
+  private _setTextarea(input: HTMLTextAreaElement, text: string): boolean {
+    const setter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      "value"
+    )?.set
+    if (!setter) return false
+    setter.call(input, text)
+    input.dispatchEvent(new Event("input", { bubbles: true }))
+    input.dispatchEvent(new Event("change", { bubbles: true }))
+    return true
+  }
+
+  private _setContentEditable(input: HTMLElement, text: string): boolean {
     input.focus()
+
+    // 1. Select all existing content
     const sel = window.getSelection()
     if (sel) {
       const range = document.createRange()
@@ -37,9 +44,11 @@ export class GenericTextboxAdapter implements SiteAdapter {
       sel.removeAllRanges()
       sel.addRange(range)
     }
+
+    // 2. Try beforeinput (ProseMirror / Quill intercept this)
     const dt = new DataTransfer()
     dt.setData("text/plain", text)
-    const replaced = input.dispatchEvent(
+    const notCancelled = input.dispatchEvent(
       new InputEvent("beforeinput", {
         bubbles: true,
         cancelable: true,
@@ -47,10 +56,27 @@ export class GenericTextboxAdapter implements SiteAdapter {
         dataTransfer: dt,
       })
     )
-    // execCommand fallback for editors that don't handle beforeinput
-    if (replaced) {
+
+    // 3. execCommand fallback (when editor did not handle beforeinput)
+    if (notCancelled) {
       document.execCommand("selectAll", false)
-      document.execCommand("insertText", false, text)
+      const ok = document.execCommand("insertText", false, text)
+      if (!ok) {
+        // Last resort: write directly and fire input event
+        input.innerText = text
+        input.dispatchEvent(new Event("input", { bubbles: true }))
+      }
     }
+
+    // Cursor to end
+    const sel2 = window.getSelection()
+    if (sel2) {
+      const r = document.createRange()
+      r.selectNodeContents(input)
+      r.collapse(false)
+      sel2.removeAllRanges()
+      sel2.addRange(r)
+    }
+    return true
   }
 }

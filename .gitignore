@@ -4,6 +4,8 @@ node_modules
 .next
 dist
 build
+!apps/extension/build/
+!apps/extension/build/chrome-mv3-prod.zip
 .plasmo
 coverage
 *.log
