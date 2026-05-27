@@ -17,7 +17,7 @@ app.use(express.json())
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "")
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-const SYSTEM = `You are a prompt-refinement engine. Improve the user's prompt before it is sent to another AI model. Preserve intent. Add missing structure, assumptions, output format, constraints, and quality checks. Do not answer the prompt. Return only the improved prompt unless JSON mode is requested.`
+const SYSTEM = `You are a prompt-refinement engine. Improve the user's prompt before it is sent to another AI model. Preserve intent. Add missing structure, assumptions, output format, constraints, and quality checks. Do not answer the prompt. Return only a JSON object: { "refinedPrompt": string, "detectedIntent": "coding"|"research"|"writing"|"analysis"|"general", "missingContext": string[], "confidence": "high"|"medium"|"low" }.`
 
 const usage = new Map<string, number>()
 const rateLimit = new Map<string, { count: number; resetAt: number }>()
@@ -42,43 +42,59 @@ const enforceRateLimit = (key: string, limit: number, windowMs: number) => {
 }
 
 app.post("/api/refine", async (req, res) => {
-  const userId = req.header("x-user-id") || "anonymous"
-  const ip = req.ip || "unknown"
+  try {
+    const userId = req.header("x-user-id") || "anonymous"
+    const ip = req.ip || "unknown"
 
-  if (!enforceRateLimit(`${ip}:${userId}`, 30, 60_000)) {
-    return res.status(429).json({ error: "Rate limit exceeded. Please retry shortly." })
+    if (!enforceRateLimit(`${ip}:${userId}`, 30, 60_000)) {
+      return res.status(429).json({ error: "Rate limit exceeded. Please retry shortly." })
+    }
+
+    const used = usage.get(userId) || 0
+    if (used >= 10) return res.status(429).json({ error: "Free tier limit reached" })
+
+    const { prompt, mode } = req.body
+    if (!prompt || typeof prompt !== "string") {
+      return res.status(400).json({ error: "prompt is required" })
+    }
+
+    const sanitized = redactSecrets(String(prompt))
+
+    const completion = await openai.chat.completions.create({
+      model: process.env.REFINER_MODEL || "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: SYSTEM },
+        {
+          role: "user",
+          content: `Mode: ${mode || "default"}\nPrompt:\n${sanitized}`
+        }
+      ]
+    })
+
+    usage.set(userId, used + 1)
+    const raw = completion.choices[0]?.message?.content || "{}"
+    res.json(JSON.parse(raw))
+  } catch (err: any) {
+    console.error("[API] /api/refine error:", err)
+    const status = err?.status || 500
+    res.status(status).json({ error: err?.message || "Internal server error" })
   }
-
-  const used = usage.get(userId) || 0
-  if (used >= 10) return res.status(429).json({ error: "Free tier limit reached" })
-
-  const { prompt, mode } = req.body
-  const sanitized = redactSecrets(String(prompt || ""))
-
-  const completion = await openai.chat.completions.create({
-    model: process.env.REFINER_MODEL || "gpt-4.1-mini",
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SYSTEM },
-      {
-        role: "user",
-        content: `Mode: ${mode}\nReturn JSON: { refinedPrompt, detectedIntent, missingContext, confidence }\nPrompt:\n${sanitized}`
-      }
-    ]
-  })
-
-  usage.set(userId, used + 1)
-  res.json(JSON.parse(completion.choices[0].message.content || "{}"))
 })
 
 app.post("/api/checkout", async (_req, res) => {
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price: process.env.STRIPE_PRICE_ID || "", quantity: 1 }],
-    success_url: `${process.env.APP_URL}/billing/success`,
-    cancel_url: `${process.env.APP_URL}/billing/cancel`
-  })
-  res.json({ url: session.url })
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: process.env.STRIPE_PRICE_ID || "", quantity: 1 }],
+      success_url: `${process.env.APP_URL}/billing/success`,
+      cancel_url: `${process.env.APP_URL}/billing/cancel`
+    })
+    res.json({ url: session.url })
+  } catch (err: any) {
+    console.error("[API] /api/checkout error:", err)
+    res.status(500).json({ error: err?.message || "Internal server error" })
+  }
 })
 
 app.get("/api/me", (_req, res) => {
@@ -89,4 +105,9 @@ app.get("/api/usage", (_req, res) => {
   res.json({ month: new Date().toISOString().slice(0, 7), refinement_count: 0, free_limit: 10 })
 })
 
-app.listen(8787, () => console.log("API running on :8787"))
+// Health check
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true })
+})
+
+app.listen(8787, () => console.log("API running on http://localhost:8787"))
