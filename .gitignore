@@ -6,6 +6,7 @@ dist
 build
 !apps/extension/build/
 !apps/extension/build/chrome-mv3-prod.zip
+apps/extension/build/chrome-mv3-prod/
 .plasmo
 coverage
 *.log
