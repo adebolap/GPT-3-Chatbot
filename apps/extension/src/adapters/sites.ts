@@ -1,41 +1,34 @@
 import { GenericTextboxAdapter } from "./base"
 
-/**
- * ChatGPT uses a rich contenteditable div.
- * The prompt area is identified by the `data-id` or the ProseMirror class.
- */
 export class ChatGPTAdapter extends GenericTextboxAdapter {
   detectInput(): HTMLElement | null {
     return (
-      (document.querySelector(
-        "#prompt-textarea, [data-id='root'] [contenteditable='true'], .ProseMirror[contenteditable='true']"
-      ) as HTMLElement | null) || super.detectInput()
+      document.querySelector<HTMLElement>("#prompt-textarea") ||
+      document.querySelector<HTMLElement>('[data-testid="prompt-textarea"]') ||
+      document.querySelector<HTMLElement>("div.ProseMirror[contenteditable='true']") ||
+      super.detectInput()
     )
   }
 }
 
-/**
- * Claude.ai uses a ProseMirror contenteditable.
- */
 export class ClaudeAdapter extends GenericTextboxAdapter {
   detectInput(): HTMLElement | null {
     return (
-      (document.querySelector(
-        ".ProseMirror[contenteditable='true'], [contenteditable='true'][role='textbox']"
-      ) as HTMLElement | null) || super.detectInput()
+      document.querySelector<HTMLElement>('[data-testid="chat-input"]') ||
+      document.querySelector<HTMLElement>("div.ProseMirror[contenteditable='true']") ||
+      document.querySelector<HTMLElement>("[contenteditable='true'][spellcheck]") ||
+      super.detectInput()
     )
   }
 }
 
-/**
- * Gemini uses a rich-text contenteditable input area.
- */
 export class GeminiAdapter extends GenericTextboxAdapter {
   detectInput(): HTMLElement | null {
     return (
-      (document.querySelector(
-        "rich-textarea [contenteditable='true'], .ql-editor[contenteditable='true'], [contenteditable='true'].input-area"
-      ) as HTMLElement | null) || super.detectInput()
+      document.querySelector<HTMLElement>("div.ql-editor[contenteditable='true']") ||
+      document.querySelector<HTMLElement>("rich-textarea [contenteditable='true']") ||
+      document.querySelector<HTMLElement>("textarea.message-input") ||
+      super.detectInput()
     )
   }
 }

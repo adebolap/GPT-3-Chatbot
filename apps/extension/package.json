@@ -1,33 +1,21 @@
 {
-  "name": "@promptrefiner/extension",
-  "displayName": "PromptRefiner",
+  "name": "@contxt/extension",
   "version": "0.1.0",
-  "private": true,
-  "manifest": {
-    "permissions": ["storage", "clipboardWrite"],
-    "host_permissions": [
-      "https://chatgpt.com/*",
-      "https://claude.ai/*",
-      "https://gemini.google.com/*",
-      "http://localhost:8787/*"
-    ]
-  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
-    "package": "plasmo build --zip"
+    "package": "plasmo package"
   },
   "dependencies": {
-    "@promptrefiner/shared": "file:../../packages/shared",
+    "dexie": "^4.0.10",
+    "plasmo": "^0.90.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/chrome": "^0.1.24",
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3",
-    "plasmo": "^0.90.5",
-    "typescript": "^5.6.3"
+    "@types/chrome": "^0.0.316",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^5.8.3"
   }
 }

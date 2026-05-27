@@ -1,153 +1,135 @@
-# PromptRefiner MVP
+# Contxt — Your AI Memory Layer
 
-A Chrome extension that injects a **✨ Refine** button into ChatGPT, Claude.ai, and Gemini, sending the draft prompt to a local refinement API before you hit Send.
+A browser extension that injects your context into every new LLM conversation and remembers everything you've ever discussed — across ChatGPT, Claude, Gemini, and more.
+
+## How it works
+
+1. You define a **persona** once (role, context, response style)
+2. Contxt **auto-prepends** it to your first message in every new chat
+3. Every conversation is **saved locally** (Dexie.js / IndexedDB)
+4. Search your entire AI history from the extension popup
 
 ## Monorepo structure
 
 ```
 apps/
-  extension/   – Plasmo MV3 Chrome extension (TypeScript)
-  api/         – Express API (refinement + billing stubs)
-  web/         – Web app placeholder
+  extension/   Plasmo MV3 extension — context injection + local memory
+  api/         Legacy Express server (unused — see apps/web/src/app/api)
+  web/         Next.js 14 — landing page, auth (Clerk), billing (Lemon Squeezy)
 packages/
-  shared/      – Shared TypeScript types
+  shared/      Shared TypeScript types
 ```
 
-## What the MVP does
+## Tech stack
 
-- Detects the textarea / contenteditable input on **ChatGPT**, **Claude.ai**, and **Gemini**
-- Injects a floating **✨ Refine** button that tracks the input as you scroll
-- Click flow: read draft → `POST /api/refine` → show side-by-side modal → Replace / Copy / Cancel
-- Site-specific adapters handle React-controlled inputs correctly (no cursor/event loss)
-- Refinement response: `refinedPrompt`, `detectedIntent`, `missingContext`, `confidence`
-- Free-tier guard: 10 refinements per user-id in-memory counter
-- Stripe checkout endpoint scaffold for paid plans
-- Secrets (API keys, tokens, card numbers) are redacted before being sent to the LLM
-- Rate limit: 30 calls / minute per IP+user-id pair
-- `/api/health` endpoint for uptime checks
+| Layer | Tech |
+|---|---|
+| Extension | Plasmo + React + TypeScript + Dexie.js |
+| Auth | Clerk (drop-in, works in extension popup) |
+| Billing | Lemon Squeezy (merchant of record — handles EU VAT automatically) |
+| Web | Next.js 14 on Vercel |
+| Local storage | Dexie.js (IndexedDB, no backend needed) |
 
----
+## Environment variables
 
-## Quick start
+### `apps/web/.env.local`
 
-### 1. Install dependencies
-
-```bash
-npm install          # from repo root — installs all workspaces
-```
-
-### 2. Configure environment variables
-
-**`apps/api/.env`**
-```bash
-OPENAI_API_KEY=sk-...
-REFINER_MODEL=gpt-4o-mini          # default; change to gpt-4o for better quality
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PRICE_ID=price_...
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_LS_CHECKOUT_URL=https://yourstore.lemonsqueezy.com/checkout/buy/VARIANT_ID
+LEMON_SQUEEZY_WEBHOOK_SECRET=whsec_...
 APP_URL=http://localhost:3000
-STRIPE_WEBHOOK_SECRET=whsec_...
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
-**`apps/extension/.env`** (optional — defaults to `http://localhost:8787`)
-```bash
-PLASMO_PUBLIC_API_BASE_URL=http://localhost:8787
+### `apps/extension/.env`
+
+```env
+PLASMO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+PLASMO_PUBLIC_WEB_URL=http://localhost:3000
 ```
 
-### 3. Start the API
+The Supabase vars are only required for Pro cloud sync (see "Set up Supabase" below).
 
-```bash
-npm run dev:api      # from repo root  →  http://localhost:8787
-```
+## Local development
 
-### 4. Build the extension
+### 1. Set up Clerk
 
-```bash
-npm run build:extension   # from repo root
-# output: apps/extension/build/chrome-mv3-prod/
-```
+1. Go to [clerk.com](https://clerk.com) → **Create application**
+2. Enable **Email** sign-in method
+3. Copy **Publishable key** and **Secret key**
 
-Or run in watch / dev mode:
-```bash
-npm run dev:extension     # from repo root
-# output: apps/extension/build/chrome-mv3-dev/
-```
+### 2. Set up Supabase (Pro cloud sync)
 
-### 5. Load the extension in Chrome
+1. Go to [supabase.com](https://supabase.com) → **New project**
+2. In **SQL Editor**, paste and run `supabase-schema.sql` from the repo root
+3. Go to **Project Settings → API**
+4. Copy **Project URL** → `SUPABASE_URL`
+5. Copy **service_role secret** → `SUPABASE_SERVICE_ROLE_KEY`
 
-1. Open **chrome://extensions**
-2. Enable **Developer mode** (top-right toggle)
-3. Click **Load unpacked**
-4. Select the build folder:
-   - Production build: `apps/extension/build/chrome-mv3-prod/`
-   - Dev build (watch mode): `apps/extension/build/chrome-mv3-dev/`
-5. Navigate to `https://chatgpt.com`, `https://claude.ai`, or `https://gemini.google.com`
-6. The **✨ Refine** button should appear above the prompt input
+### 3. Set up Lemon Squeezy
 
----
+1. [app.lemonsqueezy.com](https://app.lemonsqueezy.com) → Create a store
+2. **Products** → New product → Contxt Pro, €49/year recurring subscription
+3. Copy the **Variant checkout URL** → `NEXT_PUBLIC_LS_CHECKOUT_URL`
+4. **Settings → Webhooks** → Add webhook pointing at your URL
+5. Enable events: `order_created`, `subscription_cancelled`, `subscription_payment_failed`
+6. Copy the **Signing secret** → `LEMON_SQUEEZY_WEBHOOK_SECRET`
 
-## Build a distributable zip
+### 4. Install and run
 
 ```bash
-npm run build:extension
-npm run package -w @promptrefiner/extension
-# zip is written to apps/extension/build/
+npm install
+
+# Terminal 1 — web app + API
+# Create apps/web/.env.local first
+npm run dev -w @contxt/web
+# → http://localhost:3000
+
+# Terminal 2 — extension
+# Create apps/extension/.env first
+npm run dev -w @contxt/extension
+# → apps/extension/.plasmo/chrome-mv3-dev/
 ```
 
----
+### 5. Load extension in Chrome
 
-## Architecture decisions
+1. `chrome://extensions` → Enable **Developer mode**
+2. **Load unpacked** → select `apps/extension/.plasmo/chrome-mv3-dev/`
 
-### Content script placement
-Plasmo v0.90.x sets `PLASMO_SRC_DIR` to `src/` if that directory exists; content scripts must therefore live in `src/contents/`, **not** at the project root `contents/`.
+### 6. Lemon Squeezy webhook (local)
 
-### Manifest configuration (Plasmo v0.90.x)
-`defineConfig` is **not** exported by `plasmo@0.90.5`. The `manifest` overrides (`permissions`, `host_permissions`) must be placed in `package.json` under the `"manifest"` key, not in `plasmo.config.ts`.
+Use [ngrok](https://ngrok.com) or similar to expose your local server:
 
-### React-controlled inputs
-ChatGPT and Claude use React-controlled contenteditable elements. Setting `element.textContent = ...` bypasses React's virtual DOM and breaks the editor. The adapter uses `document.execCommand("insertText")` (with a `textContent` fallback) to keep React's event system intact.
-
-### Button positioning
-The Refine button uses `position: fixed` and re-positions itself on `scroll` and `resize` events so it always stays aligned with the input as the page re-flows.
-
----
-
-## Supabase schema (target)
-
-```sql
-create table users (
-  id uuid primary key,
-  email text not null unique,
-  stripe_customer_id text,
-  subscription_status text default 'free',
-  plan text default 'free',
-  created_at timestamptz default now()
-);
-
-create table usage_events (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id),
-  refinement_count int not null default 0,
-  month text not null,
-  created_at timestamptz default now()
-);
-
-create table prompt_preferences (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id),
-  default_mode text default 'default',
-  custom_style_instruction text,
-  allow_prompt_history boolean default false,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+```bash
+ngrok http 3000
+# Use https://xxx.ngrok.io/api/lemon-webhook as the webhook URL in LS dashboard
 ```
 
----
+## Deploy to Vercel
 
-## Security notes
+1. Import repo → set **Root Directory** to `apps/web`
+2. Add the 4 `apps/web/.env.local` vars in Vercel dashboard
+3. Set `APP_URL` to your Vercel domain
+4. Deploy
+5. Update Lemon Squeezy webhook URL to `https://yourapp.vercel.app/api/lemon-webhook`
+6. In Clerk dashboard → **JWT Templates** → set redirect URLs to your Vercel domain
 
-- No hardcoded API keys — environment variables only
-- Raw prompt storage is **off** by default (`allow_prompt_history = false`)
-- Add distributed rate limiting (Redis / Upstash) before going to production
-- Add Stripe webhook signature validation before going to production
-- All API errors are caught and returned as structured JSON; no stack traces leak to the client
+## Free vs Pro
+
+| | Free | Pro |
+|---|---|---|
+| Personas | 3 | Unlimited |
+| History | 90 days local | Full history + cloud sync |
+| Search | Local only | Across all devices |
+| Price | €0 | €49/year |
+
+## Roadmap
+
+- [ ] Clerk auth in extension popup (sign in for cloud sync)
+- [x] Supabase cloud sync for Pro conversations
+- [ ] Smart recall — surface similar past conversations
+- [ ] Team personas — share context across a team
+- [ ] Firefox support

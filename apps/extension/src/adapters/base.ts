@@ -1,113 +1,97 @@
 import type { SiteAdapter } from "./types"
 
-/**
- * Set a value on a React-controlled input/textarea without losing the React
- * synthetic-event binding.  Mirrors what react-testing-library does internally.
- */
-function setNativeValue(el: HTMLTextAreaElement, value: string) {
-  const nativeSetter = Object.getOwnPropertyDescriptor(
-    window.HTMLTextAreaElement.prototype,
-    "value"
-  )?.set
-  if (nativeSetter) {
-    nativeSetter.call(el, value)
-  } else {
-    el.value = value
-  }
-  el.dispatchEvent(new Event("input", { bubbles: true }))
-  el.dispatchEvent(new Event("change", { bubbles: true }))
-}
-
-/**
- * Set text inside a React-controlled contenteditable element.
- * Uses execCommand so React's synthetic SyntheticEvent and
- * the browser's selection/undo stack stay intact.
- */
-function setContentEditableValue(el: HTMLElement, value: string) {
-  el.focus()
-  // Select all existing content
-  const sel = window.getSelection()
-  const range = document.createRange()
-  range.selectNodeContents(el)
-  sel?.removeAllRanges()
-  sel?.addRange(range)
-  // Replace with new text (keeps undo history + triggers React's onChange)
-  document.execCommand("insertText", false, value)
-  // Fallback if execCommand is unsupported (e.g., Firefox nightly)
-  if (!el.textContent?.includes(value.slice(0, 10))) {
-    el.textContent = value
-    el.dispatchEvent(new Event("input", { bubbles: true }))
-  }
-}
-
 export class GenericTextboxAdapter implements SiteAdapter {
-  detectInput(): HTMLTextAreaElement | HTMLElement | null {
+  detectInput(): HTMLElement | null {
     return (
-      (document.querySelector("textarea") as HTMLTextAreaElement | null) ||
-      (document.querySelector('[contenteditable="true"]') as HTMLElement | null)
+      document.querySelector<HTMLElement>("textarea") ||
+      document.querySelector<HTMLElement>('[contenteditable="true"]')
     )
   }
 
-  getPromptText(input: HTMLTextAreaElement | HTMLElement): string {
-    if (input instanceof HTMLTextAreaElement) return input.value
-    return input.innerText || input.textContent || ""
+  getPromptText(input: HTMLElement): string {
+    return input instanceof HTMLTextAreaElement
+      ? input.value
+      : input.textContent || ""
   }
 
-  setPromptText(input: HTMLTextAreaElement | HTMLElement, text: string): void {
+  setPromptText(input: HTMLElement, text: string): void {
     if (input instanceof HTMLTextAreaElement) {
-      setNativeValue(input, text)
-    } else {
-      setContentEditableValue(input as HTMLElement, text)
+      // Use native setter so React/Vue controlled inputs detect the change
+      const setter = Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype,
+        "value"
+      )?.set
+      setter?.call(input, text)
+      input.dispatchEvent(new Event("input", { bubbles: true }))
+      input.dispatchEvent(new Event("change", { bubbles: true }))
+      return
     }
+    // contenteditable
+    input.focus()
+    document.execCommand("selectAll", false)
+    document.execCommand("insertText", false, text)
   }
 
-  injectButton(
-    input: HTMLTextAreaElement | HTMLElement,
-    onClick: () => void
-  ): HTMLButtonElement {
+  injectButton(input: HTMLElement, onClick: () => void): HTMLButtonElement {
     const btn = document.createElement("button")
-    btn.textContent = "✨ Refine"
-    btn.setAttribute("data-promptrefiner", "1")
-    btn.style.cssText = [
-      "position:fixed",
-      "z-index:9999",
-      "padding:6px 12px",
-      "border-radius:8px",
-      "border:none",
-      "cursor:pointer",
-      "background:#111827",
-      "color:#fff",
-      "font-size:13px",
-      "font-family:sans-serif",
-      "box-shadow:0 2px 8px rgba(0,0,0,.35)",
-      "transition:opacity .15s",
-    ].join(";")
+    btn.id = "pr-refine-btn"
+    btn.textContent = "✦ Refine"
+    Object.assign(btn.style, {
+      position: "fixed",
+      zIndex: "2147483646",
+      padding: "6px 14px",
+      borderRadius: "20px",
+      border: "1px solid rgba(255,255,255,0.15)",
+      cursor: "pointer",
+      background: "linear-gradient(135deg,#111827 0%,#1f2937 100%)",
+      color: "#f9fafb",
+      fontSize: "13px",
+      fontWeight: "600",
+      fontFamily: "system-ui,-apple-system,sans-serif",
+      letterSpacing: "0.01em",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+      transition: "opacity 0.15s,transform 0.1s",
+      lineHeight: "1",
+    } as Partial<CSSStyleDeclaration>)
 
-    const position = () => {
+    btn.onmouseenter = () => {
+      btn.style.opacity = "0.85"
+      btn.style.transform = "scale(1.03)"
+    }
+    btn.onmouseleave = () => {
+      btn.style.opacity = "1"
+      btn.style.transform = "scale(1)"
+    }
+
+    const reposition = () => {
       const rect = input.getBoundingClientRect()
-      if (rect.width === 0) return // input not visible yet
-      btn.style.top = `${Math.max(4, rect.top - 42)}px`
-      btn.style.left = `${rect.right - 110}px`
+      if (rect.width === 0) return
+      btn.style.top = `${rect.top + 8}px`
+      btn.style.left = `${rect.right - 116}px`
     }
+    reposition()
 
-    position()
-    btn.onclick = (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      onClick()
-    }
+    const obs = new ResizeObserver(reposition)
+    obs.observe(input)
+    ;(btn as any)._obs = obs
 
-    // Re-position on scroll / resize so the button tracks the input
-    const reposition = () => position()
     window.addEventListener("scroll", reposition, { passive: true })
     window.addEventListener("resize", reposition, { passive: true })
-    // Expose cleanup so the content script can call it later
-    ;(btn as any)._cleanup = () => {
+    ;(btn as any)._reposition = reposition
+
+    btn.onclick = onClick
+    document.body.appendChild(btn)
+    return btn
+  }
+
+  cleanupButton(btn: HTMLButtonElement): void {
+    const obs = (btn as any)._obs as ResizeObserver | undefined
+    obs?.disconnect()
+    const reposition = (btn as any)._reposition as (() => void) | undefined
+    if (reposition) {
       window.removeEventListener("scroll", reposition)
       window.removeEventListener("resize", reposition)
     }
-
-    document.body.appendChild(btn)
-    return btn
+    btn.remove()
   }
 }
