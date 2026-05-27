@@ -308,7 +308,7 @@ function MemoryTab() {
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
-function HeaderAuth() {
+function HeaderAuthClerk() {
   const { isSignedIn } = useUser()
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -333,6 +333,11 @@ function HeaderAuth() {
   )
 }
 
+function HeaderAuth() {
+  if (!CLERK_KEY) return null
+  return <HeaderAuthClerk />
+}
+
 function PopupInner() {
   const [tab, setTab] = useState<"persona" | "memory">("persona")
 
@@ -353,6 +358,9 @@ function PopupInner() {
 }
 
 export default function Popup() {
+  if (!CLERK_KEY) {
+    return <PopupInner />
+  }
   return (
     <ClerkProvider publishableKey={CLERK_KEY} routerPush={(to) => { window.location.href = to }} routerReplace={(to) => { window.location.replace(to) }}>
       <PopupInner />
