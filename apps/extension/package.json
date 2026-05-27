@@ -2,11 +2,12 @@
   "name": "@contxt/extension",
   "version": "0.1.0",
   "scripts": {
-    "dev": "plasmo dev",
-    "build": "plasmo build",
-    "package": "plasmo package"
+    "dev": "PLASMO_SRC_PATH=apps/extension plasmo dev",
+    "build": "PLASMO_SRC_PATH=apps/extension plasmo build",
+    "package": "PLASMO_SRC_PATH=apps/extension plasmo package"
   },
   "dependencies": {
+    "@clerk/chrome-extension": "^3.1.30",
     "dexie": "^4.0.10",
     "plasmo": "^0.90.5",
     "react": "^18.3.1",
@@ -17,5 +18,15 @@
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "typescript": "^5.8.3"
+  },
+  "manifest": {
+    "name": "Contxt — AI Memory",
+    "description": "Your AI memory layer. Context injection and conversation history across ChatGPT, Claude, Gemini and more.",
+    "permissions": ["storage", "clipboardWrite"],
+    "host_permissions": [
+      "https://chatgpt.com/*",
+      "https://claude.ai/*",
+      "https://gemini.google.com/*"
+    ]
   }
 }

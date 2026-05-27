@@ -12,7 +12,6 @@ export const config: PlasmoCSConfig = {
     "https://chatgpt.com/*",
     "https://claude.ai/*",
     "https://gemini.google.com/*",
-    "<all_urls>",
   ],
   run_at: "document_idle",
 }
@@ -162,6 +161,8 @@ function watchSendButton() {
 function checkUrlChange() {
   if (location.href !== currentUrl) {
     currentUrl = location.href
+    injectedForUrl = ""
+    savedForUrl = ""
   }
 }
 

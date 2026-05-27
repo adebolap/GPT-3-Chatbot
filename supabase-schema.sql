@@ -17,3 +17,8 @@ create table if not exists sync_tokens (
   token text not null unique,
   created_at timestamptz default now()
 );
+
+create table if not exists waitlist_emails (
+  email text primary key,
+  created_at timestamptz default now()
+);
