@@ -21,7 +21,3 @@ This repo now follows the user's **Contxt** product direction. Do not replace or
 ## What happened in the last scaffold
 
 The previous implementation replaced the old GPT-3 chatbot / PromptRefiner scaffold with a new Contxt monorepo based on the README direction supplied by the user. Future work should not overwrite additional user changes; it should build on this Contxt baseline.
-
-## Branch conflict help
-
-For the unavailable branch `resolutionsclaude/eloquent-curie-Zd4FF`, see `docs/branch-integration-resolutionsclaude-eloquent-curie-Zd4FF.md`.
