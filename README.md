@@ -10,6 +10,11 @@ A browser extension that injects your context into every new LLM conversation an
 4. Search your entire AI history from the extension popup
 
 
+
+## PR conflict root cause
+
+If GitHub reports conflicts across most files, see `docs/conflict-root-cause.md`. This scaffold is a product-pivot commit; if web conflict resolution keeps failing, create a clean branch from current `main` and apply the Contxt scaffold there instead of repeatedly resolving the old branch.
+
 ## Change safety
 
 This repo follows the **Contxt** direction in this README. Do not overwrite user-owned product work or reintroduce the old PromptRefiner direction without explicit instruction. See `docs/change-safety.md`.
