@@ -1,17 +1,34 @@
 import { ClerkProvider } from "@clerk/nextjs"
+import type { Metadata, Viewport } from "next"
 import type { ReactNode } from "react"
+import "./globals.css"
 
-export const metadata = {
-  title: "Contxt — Your AI Memory Layer",
-  description: "Inject your context into every new LLM conversation and search your AI history."
+export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "Contxt — Your AI memory layer",
+  description:
+    "Never re-explain yourself to an AI again. Contxt injects your context into every chat on ChatGPT, Claude, Gemini and more.",
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body>{children}</body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+          background: "#fff",
+          color: "#111827",
+        }}
+      >
+        <ClerkProvider>{children}</ClerkProvider>
+      </body>
+    </html>
   )
 }

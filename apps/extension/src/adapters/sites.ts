@@ -1,36 +1,42 @@
 import { GenericTextboxAdapter } from "./base"
-import type { SupportedSite } from "./types"
 
 export class ChatGPTAdapter extends GenericTextboxAdapter {
-  detectInput() {
-    return (document.querySelector("#prompt-textarea") || super.detectInput()) as HTMLTextAreaElement | HTMLElement | null
+  detectInput(): HTMLElement | null {
+    return (
+      document.querySelector<HTMLElement>("#prompt-textarea") ||
+      document.querySelector<HTMLElement>('[data-testid="prompt-textarea"]') ||
+      document.querySelector<HTMLElement>("div.ProseMirror[contenteditable='true']") ||
+      super.detectInput()
+    )
   }
 }
 
 export class ClaudeAdapter extends GenericTextboxAdapter {
-  detectInput() {
-    return (document.querySelector('[contenteditable="true"][role="textbox"]') || super.detectInput()) as HTMLTextAreaElement | HTMLElement | null
+  detectInput(): HTMLElement | null {
+    return (
+      document.querySelector<HTMLElement>('[data-testid="chat-input"]') ||
+      document.querySelector<HTMLElement>("div.ProseMirror[contenteditable='true']") ||
+      document.querySelector<HTMLElement>("[contenteditable='true'][spellcheck]") ||
+      super.detectInput()
+    )
   }
 }
 
 export class GeminiAdapter extends GenericTextboxAdapter {
-  detectInput() {
-    return (document.querySelector('[contenteditable="true"]') || super.detectInput()) as HTMLTextAreaElement | HTMLElement | null
+  detectInput(): HTMLElement | null {
+    return (
+      document.querySelector<HTMLElement>("div.ql-editor[contenteditable='true']") ||
+      document.querySelector<HTMLElement>("rich-textarea [contenteditable='true']") ||
+      document.querySelector<HTMLElement>("textarea.message-input") ||
+      super.detectInput()
+    )
   }
 }
 
-export const resolveSite = (): SupportedSite => {
-  const host = window.location.hostname
-  if (host.includes("chatgpt.com")) return "chatgpt"
-  if (host.includes("claude.ai")) return "claude"
-  if (host.includes("gemini.google.com")) return "gemini"
-  return "generic"
-}
-
 export const resolveAdapter = () => {
-  const site = resolveSite()
-  if (site === "chatgpt") return new ChatGPTAdapter()
-  if (site === "claude") return new ClaudeAdapter()
-  if (site === "gemini") return new GeminiAdapter()
+  const host = window.location.hostname
+  if (host.includes("chatgpt.com")) return new ChatGPTAdapter()
+  if (host.includes("claude.ai")) return new ClaudeAdapter()
+  if (host.includes("gemini.google.com")) return new GeminiAdapter()
   return new GenericTextboxAdapter()
 }

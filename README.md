@@ -9,11 +9,6 @@ A browser extension that injects your context into every new LLM conversation an
 3. Every conversation is **saved locally** (Dexie.js / IndexedDB)
 4. Search your entire AI history from the extension popup
 
-
-## Change safety
-
-This repo follows the **Contxt** direction in this README. Do not overwrite user-owned product work or reintroduce the old PromptRefiner direction without explicit instruction. See `docs/change-safety.md`.
-
 ## Monorepo structure
 
 ```

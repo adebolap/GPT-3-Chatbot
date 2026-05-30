@@ -1,63 +1,54 @@
-import { auth } from "@clerk/nextjs/server"
-import { createClient } from "@supabase/supabase-js"
-import { webEnv } from "../../../../lib/env"
+import { NextResponse } from "next/server"
+import { getSupabaseAdmin } from "@/lib/supabase-admin"
 
-const getSupabase = () => {
-  if (!webEnv.supabaseUrl || !webEnv.supabaseServiceRoleKey) return null
-  return createClient(webEnv.supabaseUrl, webEnv.supabaseServiceRoleKey)
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 }
 
-const getProfile = async () => {
-  const { userId } = await auth()
-  if (!userId) return { error: Response.json({ error: "Unauthorized" }, { status: 401 }) }
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS })
+}
 
-  const supabase = getSupabase()
-  if (!supabase) return { error: Response.json({ error: "Supabase is not configured" }, { status: 503 }) }
+export async function POST(req: Request) {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "").trim()
+  if (!token) return NextResponse.json({ error: "Missing token" }, { status: 401, headers: CORS })
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .upsert({ clerk_user_id: userId, updated_at: new Date().toISOString() }, { onConflict: "clerk_user_id" })
-    .select("id, plan")
+  const { data: tokenRow } = await getSupabaseAdmin()
+    .from("sync_tokens")
+    .select("user_id")
+    .eq("token", token)
     .single()
 
-  if (error) return { error: Response.json({ error: error.message }, { status: 500 }) }
-  if (profile.plan !== "pro") return { error: Response.json({ error: "Cloud sync requires Contxt Pro" }, { status: 402 }) }
+  if (!tokenRow) return NextResponse.json({ error: "Invalid token" }, { status: 401, headers: CORS })
 
-  return { supabase, profile }
-}
+  const body = await req.json()
+  const raw: any[] = Array.isArray(body.conversations) ? body.conversations : []
+  if (raw.length === 0) return NextResponse.json({ synced: 0 }, { headers: CORS })
 
-export async function GET() {
-  const context = await getProfile()
-  if (context.error) return context.error
+  const ALLOWED_MODELS = new Set(["chatgpt", "claude", "gemini", "other"])
+  const conversations = raw.slice(0, 500).filter(
+    (c) => c && typeof c.startedAt === "number" && isFinite(c.startedAt)
+  )
 
-  const { data, error } = await context.supabase
+  const rows = conversations.map((c) => ({
+    user_id: tokenRow.user_id,
+    model: ALLOWED_MODELS.has(c.model) ? c.model : "other",
+    url: String(c.url ?? "").slice(0, 2048),
+    title: String(c.title ?? "").slice(0, 500),
+    persona_name: String(c.personaName ?? "").slice(0, 100),
+    started_at: Math.floor(c.startedAt),
+  }))
+
+  const { error } = await getSupabaseAdmin()
     .from("conversations")
-    .select("*")
-    .eq("user_id", context.profile.id)
-    .order("updated_at", { ascending: false })
+    .upsert(rows, { onConflict: "user_id,url,started_at", ignoreDuplicates: true })
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json({ conversations: data })
-}
+  if (error) {
+    console.error("sync error:", error)
+    return NextResponse.json({ error: "Sync failed" }, { status: 500, headers: CORS })
+  }
 
-export async function POST(request: Request) {
-  const context = await getProfile()
-  if (context.error) return context.error
-
-  const body = await request.json()
-  const now = new Date().toISOString()
-  const { error } = await context.supabase.from("conversations").upsert({
-    id: body.id,
-    user_id: context.profile.id,
-    site: body.site,
-    url: body.url,
-    title: body.title,
-    first_user_message: body.firstUserMessage,
-    injected_prompt: body.injectedPrompt,
-    created_at: body.createdAt || now,
-    updated_at: body.updatedAt || now
-  })
-
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json({ ok: true })
+  return NextResponse.json({ synced: rows.length }, { headers: CORS })
 }

@@ -7,8 +7,8 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@contxt/shared": ["packages/shared/src/index.ts"],
-      "@contxt/shared/*": ["packages/shared/src/*"]
+      "@promptrefiner/shared": ["packages/shared/src/index.ts"],
+      "@promptrefiner/shared/*": ["packages/shared/src/*"]
     }
   }
 }

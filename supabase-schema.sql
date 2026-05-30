@@ -1,38 +1,24 @@
-create extension if not exists pgcrypto;
-
-create table if not exists profiles (
-  id uuid primary key default gen_random_uuid(),
-  clerk_user_id text unique not null,
-  email text,
-  plan text not null default 'free',
-  lemon_squeezy_customer_id text,
-  lemon_squeezy_subscription_id text,
-  lemon_squeezy_status text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists personas (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade,
-  name text not null,
-  role text not null,
-  context text not null,
-  response_style text not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 create table if not exists conversations (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade,
-  site text not null,
-  url text not null,
+  id uuid default gen_random_uuid() primary key,
+  user_id text not null,
+  model text,
+  url text not null default '',
   title text,
-  first_user_message text not null,
-  injected_prompt text not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  persona_name text,
+  started_at bigint not null,
+  synced_at timestamptz default now(),
+  unique (user_id, url, started_at)
 );
 
-create index if not exists conversations_user_updated_at_idx on conversations(user_id, updated_at desc);
+create index if not exists conversations_user_idx on conversations (user_id, started_at desc);
+
+create table if not exists sync_tokens (
+  user_id text primary key,
+  token text not null unique,
+  created_at timestamptz default now()
+);
+
+create table if not exists waitlist_emails (
+  email text primary key,
+  created_at timestamptz default now()
+);

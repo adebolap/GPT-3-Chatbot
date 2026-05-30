@@ -1,31 +1,38 @@
-export interface Persona {
+export type RefinementMode =
+  | "default"
+  | "professional"
+  | "accuracy-first"
+  | "technical-coding"
+  | "marketing"
+  | "shorter"
+  | "deep-research"
+
+export type DetectedIntent = "coding" | "research" | "writing" | "analysis" | "general"
+export type Confidence = "high" | "medium" | "low"
+export type SubscriptionStatus = "free" | "active" | "canceled" | "past_due"
+export type Plan = "free" | "pro"
+
+export interface RefineRequest {
+  prompt: string
+  mode: RefinementMode
+}
+
+export interface RefineResponse {
+  refinedPrompt: string
+  detectedIntent: DetectedIntent
+  missingContext: string[]
+  confidence: Confidence
+}
+
+export interface UserProfile {
   id: string
-  name: string
-  role: string
-  context: string
-  responseStyle: string
-  createdAt: string
-  updatedAt: string
+  email: string
+  subscription_status: SubscriptionStatus
+  plan: Plan
 }
 
-export interface ConversationMemory {
-  id: string
-  site: "chatgpt" | "claude" | "gemini" | "generic"
-  url: string
-  title?: string
-  firstUserMessage: string
-  injectedPrompt: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface MemorySearchResult extends ConversationMemory {
-  matchedText: string
-}
-
-export interface SubscriptionEntitlements {
-  plan: "free" | "pro"
-  personaLimit: number | "unlimited"
-  localHistoryDays: number | "unlimited"
-  cloudSync: boolean
+export interface UsageInfo {
+  month: string
+  refinement_count: number
+  free_limit: number
 }

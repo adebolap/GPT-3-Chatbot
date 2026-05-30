@@ -1,69 +1,183 @@
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
-import { webEnv } from "../lib/env"
+"use client"
+import Link from "next/link"
+import { useState } from "react"
+import { NavAuth } from "./NavAuth"
 
-const features = [
-  "Define one persona with role, context, and response style",
-  "Auto-prepend that context to new LLM conversations",
-  "Save every conversation locally with Dexie.js / IndexedDB",
-  "Search your AI history from the extension popup"
+const STEPS = [
+  { n: "1", title: "Define yourself once", desc: "Tell Contxt your role, what you're working on, and how you like responses." },
+  { n: "2", title: "Chat normally", desc: "Open ChatGPT, Claude, or Gemini and type as usual. Contxt is watching." },
+  { n: "3", title: "Context auto-applied", desc: "Your first message gets your context silently prepended. The AI knows who you are." },
 ]
 
-export default function HomePage() {
-  const checkoutUrl = webEnv.lemonSqueezyCheckoutUrl
+const FEATURES = [
+  { icon: "⚡", title: "Zero friction", desc: "No copy-pasting. No system prompts. One click and your context travels with you across every LLM." },
+  { icon: "🧠", title: "Conversation memory", desc: "Every chat you have is saved locally. Search across months of conversations in seconds." },
+  { icon: "🔒", title: "Private by default", desc: "Conversations are stored on your device. Nothing leaves without your permission." },
+  { icon: "✦", title: "Works everywhere", desc: "ChatGPT, Claude, Gemini, and any LLM chat interface. One extension, every model." },
+]
 
+export default function Home() {
   return (
-    <main style={{ fontFamily: "Inter, system-ui, sans-serif", margin: "0 auto", maxWidth: 980, padding: "72px 24px", color: "#111827" }}>
-      <nav style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: 48 }}>
-        <strong>Contxt</strong>
-        <SignedOut>
-          <SignInButton mode="modal">
-            <button style={{ background: "#fff", border: "1px solid #d1d5db", borderRadius: 10, padding: "10px 14px" }}>Sign in</button>
-          </SignInButton>
-        </SignedOut>
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
+    <>
+      {/* Nav */}
+      <nav className="site-nav">
+        <span style={{ fontWeight: 700, fontSize: 16 }}>✦ Contxt</span>
+        <NavAuth />
       </nav>
 
-      <p style={{ color: "#4f46e5", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Contxt</p>
-      <h1 style={{ fontSize: 58, lineHeight: 1, margin: "16px 0" }}>Your AI memory layer.</h1>
-      <p style={{ color: "#4b5563", fontSize: 20, lineHeight: 1.6, maxWidth: 760 }}>
-        A browser extension that injects your context into every new LLM conversation and remembers what you have discussed across ChatGPT, Claude, Gemini, and more.
-      </p>
-
-      <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
-        <a href={checkoutUrl || "#pricing"} aria-disabled={!checkoutUrl} style={{ background: "#111827", borderRadius: 10, color: "#fff", padding: "12px 16px", textDecoration: "none" }}>
-          Upgrade to Pro
-        </a>
-        <a href="/api/health" style={{ border: "1px solid #d1d5db", borderRadius: 10, color: "#111827", padding: "12px 16px", textDecoration: "none" }}>
-          Health check
-        </a>
-      </div>
-      {!checkoutUrl && <p style={{ color: "#92400e", marginTop: 10 }}>Set NEXT_PUBLIC_LS_CHECKOUT_URL to enable live Pro checkout.</p>}
-
-      <section style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", marginTop: 44 }}>
-        {features.map((feature) => (
-          <div key={feature} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 14, padding: 18 }}>
-            {feature}
-          </div>
-        ))}
+      {/* Hero */}
+      <section className="hero-section">
+        <div className="browser-badge">
+          ChatGPT · Claude · Gemini · Any LLM
+        </div>
+        <h1 style={{ fontSize: "clamp(34px,6vw,64px)", fontWeight: 800, lineHeight: 1.08, margin: "0 0 20px", letterSpacing: "-0.03em" }}>
+          Never re-explain<br />yourself to an AI.
+        </h1>
+        <p style={{ fontSize: "clamp(15px,2.5vw,18px)", color: "#6b7280", lineHeight: 1.65, margin: "0 0 36px" }}>
+          Contxt is a browser extension that injects your context into every new LLM conversation automatically — and remembers everything you've ever discussed.
+        </p>
+        <div className="hero-cta">
+          <Link href="/install" style={{ background: "#111827", color: "#fff", padding: "14px 28px", borderRadius: 12, textDecoration: "none", fontSize: 16, fontWeight: 700 }}>
+            Install free — Chrome &amp; Edge
+          </Link>
+          <Link href="/billing" style={{ background: "#f3f4f6", color: "#111827", padding: "14px 28px", borderRadius: 12, textDecoration: "none", fontSize: 16, fontWeight: 700 }}>
+            Get Pro — €49/yr
+          </Link>
+        </div>
       </section>
 
-      <section id="pricing" style={{ marginTop: 56 }}>
-        <h2>Free vs Pro</h2>
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-          <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 18 }}>
-            <h3>Free</h3>
-            <p>3 personas, 90 days of local history, local search.</p>
-            <strong>€0</strong>
-          </div>
-          <div style={{ border: "2px solid #4f46e5", borderRadius: 14, padding: 18 }}>
-            <h3>Pro</h3>
-            <p>Unlimited personas, full history, cloud sync across devices.</p>
-            <strong>€49/year</strong>
+      {/* How it works */}
+      <section style={{ background: "#f9fafb", padding: "72px 24px" }}>
+        <div className="section-inner">
+          <h2 style={{ textAlign: "center", fontSize: "clamp(24px,4vw,32px)", fontWeight: 700, margin: "0 0 48px", letterSpacing: "-0.02em" }}>How it works</h2>
+          <div className="steps-grid">
+            {STEPS.map((s) => (
+              <div key={s.n}>
+                <div style={{ width: 40, height: 40, background: "#111827", color: "#fff", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 18, marginBottom: 14 }}>{s.n}</div>
+                <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 600 }}>{s.title}</h3>
+                <p style={{ margin: 0, color: "#6b7280", lineHeight: 1.6, fontSize: 14 }}>{s.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
-    </main>
+
+      {/* Features */}
+      <section style={{ padding: "72px 24px", maxWidth: 900, margin: "0 auto" }}>
+        <h2 style={{ textAlign: "center", fontSize: "clamp(24px,4vw,32px)", fontWeight: 700, margin: "0 0 48px", letterSpacing: "-0.02em" }}>Built around your memory</h2>
+        <div className="features-grid">
+          {FEATURES.map((f) => (
+            <div key={f.title} style={{ background: "#f9fafb", borderRadius: 16, padding: 24 }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>{f.icon}</div>
+              <h3 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600 }}>{f.title}</h3>
+              <p style={{ margin: 0, color: "#6b7280", lineHeight: 1.6, fontSize: 13 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section style={{ background: "#f9fafb", padding: "72px 24px" }}>
+        <h2 style={{ textAlign: "center", fontSize: "clamp(24px,4vw,32px)", fontWeight: 700, margin: "0 0 8px", letterSpacing: "-0.02em" }}>Simple pricing</h2>
+        <p style={{ textAlign: "center", color: "#6b7280", fontSize: 16, margin: "0 0 48px" }}>Local-first. Private. Upgrade when you need more.</p>
+        <div className="pricing-grid">
+          {[
+            {
+              name: "Free", price: "€0",
+              features: ["3 personas", "90-day local history", "Context injection on all LLMs", "Chrome &amp; Edge support"],
+              cta: "Install extension", href: "/install", highlight: false,
+            },
+            {
+              name: "Pro", price: "€49", period: "/year", badge: "Early-bird",
+              features: ["Unlimited personas", "Full history + cloud sync", "Search across all conversations", "Priority support", "Team sharing (coming soon)"],
+              cta: "Get Pro", href: "/billing", highlight: true,
+            },
+          ].map((p) => (
+            <div key={p.name} style={{ background: p.highlight ? "#111827" : "#fff", color: p.highlight ? "#fff" : "#111827", borderRadius: 20, padding: 32, border: p.highlight ? "none" : "1px solid #e5e7eb", position: "relative" }}>
+              {p.badge && <div style={{ position: "absolute", top: 16, right: 16, background: "#7c3aed", color: "#fff", fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20 }}>{p.badge}</div>}
+              <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.6, marginBottom: 8 }}>{p.name}</div>
+              <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1, marginBottom: 4 }}>
+                {p.price}
+                {"period" in p && <span style={{ fontSize: 16, fontWeight: 400, opacity: 0.6 }}> {p.period}</span>}
+              </div>
+              <ul style={{ listStyle: "none", padding: 0, margin: "24px 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {p.features.map((f) => (
+                  <li key={f} style={{ fontSize: 14, opacity: 0.85, display: "flex", gap: 8 }}>
+                    <span style={{ opacity: 0.6 }}>✓</span> <span dangerouslySetInnerHTML={{ __html: f }} />
+                  </li>
+                ))}
+              </ul>
+              <Link href={p.href} style={{ display: "block", textAlign: "center", padding: "12px 24px", borderRadius: 10, fontWeight: 700, fontSize: 15, textDecoration: "none", background: p.highlight ? "#fff" : "#111827", color: p.highlight ? "#111827" : "#fff" }}>
+                {p.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Email capture */}
+      <WaitlistSection />
+
+      <footer style={{ textAlign: "center", padding: "32px 24px", fontSize: 13, color: "#9ca3af", borderTop: "1px solid #f3f4f6" }}>
+        © {new Date().getFullYear()} Contxt ·{" "}
+        <Link href="/sign-in" style={{ color: "#6b7280" }}>Sign in</Link>
+      </footer>
+    </>
+  )
+}
+
+function WaitlistSection() {
+  const [email, setEmail] = useState("")
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle")
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) return
+    setStatus("loading")
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      setStatus(res.ok ? "done" : "error")
+    } catch {
+      setStatus("error")
+    }
+  }
+
+  return (
+    <section style={{ background: "#111827", padding: "72px 24px", textAlign: "center" }}>
+      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+        <h2 style={{ fontSize: "clamp(22px,4vw,28px)", fontWeight: 700, color: "#f9fafb", margin: "0 0 12px", letterSpacing: "-0.02em" }}>
+          Stay in the loop
+        </h2>
+        <p style={{ color: "#9ca3af", fontSize: 15, margin: "0 0 28px", lineHeight: 1.6 }}>
+          Get notified when we launch new features, including team sharing and mobile web support.
+        </p>
+        {status === "done" ? (
+          <p style={{ color: "#4ade80", fontSize: 15, fontWeight: 600 }}>You're in! We'll be in touch.</p>
+        ) : (
+          <form onSubmit={submit} className="email-form">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="email-input"
+            />
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              style={{ padding: "12px 24px", borderRadius: 10, background: "#7c3aed", color: "#fff", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", fontFamily: "inherit" }}
+            >
+              {status === "loading" ? "Saving…" : "Notify me"}
+            </button>
+            {status === "error" && <p style={{ width: "100%", margin: 0, fontSize: 13, color: "#f87171" }}>Something went wrong — try again.</p>}
+          </form>
+        )}
+      </div>
+    </section>
   )
 }
