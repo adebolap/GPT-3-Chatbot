@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@contxt/shared": ["packages/shared/src/index.ts"],
+      "@contxt/shared/*": ["packages/shared/src/*"]
+    }
+  }
+}
