@@ -34,15 +34,25 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
-    const [tokenRes, convsRes] = await Promise.all([
-      fetch("/api/sync-token").then((r) => r.json()),
-      fetch("/api/conversations").then((r) => r.json()),
-    ])
-    setToken(tokenRes.token ?? null)
-    setConversations(convsRes.conversations ?? [])
-    setLoading(false)
+    try {
+      const [tokenRes, convsRes] = await Promise.all([
+        fetch("/api/sync-token").then((r) => r.json()),
+        fetch("/api/conversations").then((r) => r.json()),
+      ])
+      if (tokenRes.error) {
+        setApiError(tokenRes.error)
+      } else {
+        setToken(tokenRes.token ?? null)
+      }
+      setConversations(convsRes.conversations ?? [])
+    } catch {
+      setApiError("Could not reach the server. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -99,6 +109,13 @@ export default function DashboardPage() {
           <p style={{ color: "#6b7280", fontSize: 14, margin: "0 0 16px", lineHeight: 1.5 }}>
             Paste this token in your Contxt extension (Memory tab → sync token field) to enable cloud backup.
           </p>
+          {apiError ? (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 14px", fontSize: 13, color: "#dc2626" }}>
+              {apiError === "Server error"
+                ? "Cloud sync is not configured yet. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to your Vercel environment variables."
+                : apiError}
+            </div>
+          ) : (
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <code style={{ flex: 1, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "10px 14px", fontSize: 13, fontFamily: "monospace", color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {loading ? "Loading…" : (token ?? "—")}
@@ -111,6 +128,7 @@ export default function DashboardPage() {
               {copied ? "Copied ✓" : "Copy"}
             </button>
           </div>
+          )}
         </div>
 
         {/* Conversation history */}
