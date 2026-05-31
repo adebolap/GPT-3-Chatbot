@@ -3,8 +3,6 @@ import type { Metadata, Viewport } from "next"
 import type { ReactNode } from "react"
 import "./globals.css"
 
-export const dynamic = "force-dynamic"
-
 export const metadata: Metadata = {
   title: "Contxt — Your AI memory layer",
   description:

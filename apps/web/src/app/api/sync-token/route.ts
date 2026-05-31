@@ -3,6 +3,8 @@ import { getAuthContext } from "@/lib/auth"
 import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { randomUUID } from "crypto"
 
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   try {
     const { userId, isPro } = await getAuthContext()
