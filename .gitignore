@@ -10,6 +10,7 @@ build
 # Allow the packaged extension ZIP so users can download it directly
 !apps/extension/build/
 !apps/extension/build/chrome-mv3-prod.zip
+apps/extension/build/chrome-mv3-prod/
 .plasmo
 coverage
 *.log
