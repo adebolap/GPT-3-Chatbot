@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/api/waitlist(.*)",
   "/api/lemon-webhook(.*)",
+  "/api/admin/(.*)",
 ])
 
 export default clerkMiddleware(async (auth, req) => {
