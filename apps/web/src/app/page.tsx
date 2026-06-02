@@ -118,9 +118,11 @@ export default function Home() {
       {/* Email capture */}
       <WaitlistSection />
 
-      <footer style={{ textAlign: "center", padding: "32px 24px", fontSize: 13, color: "#9ca3af", borderTop: "1px solid #f3f4f6" }}>
-        © {new Date().getFullYear()} Contxt ·{" "}
+      <footer style={{ textAlign: "center", padding: "32px 24px", fontSize: 13, color: "#9ca3af", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
+        <span>© {new Date().getFullYear()} Contxt</span>
         <Link href="/sign-in" style={{ color: "#6b7280" }}>Sign in</Link>
+        <Link href="/privacy" style={{ color: "#6b7280" }}>Privacy Policy</Link>
+        <Link href="/terms" style={{ color: "#6b7280" }}>Terms of Service</Link>
       </footer>
     </>
   )
@@ -179,15 +181,5 @@ function WaitlistSection() {
         )}
       </div>
     </section>
-
-    {/* Footer */}
-    <footer style={{ borderTop: "1px solid #f3f4f6", padding: "24px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-      <span style={{ fontSize: 13, color: "#9ca3af" }}>© 2025 Contxt</span>
-      <div style={{ display: "flex", gap: 20 }}>
-        <Link href="/privacy" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none" }}>Privacy Policy</Link>
-        <Link href="/terms" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none" }}>Terms of Service</Link>
-      </div>
-    </footer>
-    </>
   )
 }
