@@ -179,5 +179,15 @@ function WaitlistSection() {
         )}
       </div>
     </section>
+
+    {/* Footer */}
+    <footer style={{ borderTop: "1px solid #f3f4f6", padding: "24px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+      <span style={{ fontSize: 13, color: "#9ca3af" }}>© 2025 Contxt</span>
+      <div style={{ display: "flex", gap: 20 }}>
+        <Link href="/privacy" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none" }}>Privacy Policy</Link>
+        <Link href="/terms" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none" }}>Terms of Service</Link>
+      </div>
+    </footer>
+    </>
   )
 }
